@@ -34,18 +34,28 @@
           </svg>
         </div>
         <figcaption role="status" aria-live="polite" aria-atomic="true"><span id="plate-title">Ready to spin</span><span id="plate-code">—</span></figcaption>
-        <a id="win-link" class="jump" href="#win" hidden>See your card</a>
+        <button id="win-link" type="button" class="minor" hidden>View winning card</button>
       </figure>
     </section>
-    <section id="win" class="win" aria-labelledby="card-name" hidden>
-      <img id="card-image" alt="" referrerpolicy="no-referrer">
-      <div><p id="card-tier"></p><h2 id="card-name"></h2><p id="card-description"></p>
-        <p id="win-note"></p>
-        <button id="action" type="button">Mint this card with MetaMask</button>
-        <p id="status" class="status" role="status"></p>
-        <a id="mint-link" href="#receipt" hidden>See NFT and import details</a>
+    <dialog id="result-dialog" aria-labelledby="result-heading">
+      <div class="result-shell">
+        <div class="result-head"><h2 id="result-heading">Your winning card</h2><button type="button" class="minor" id="close-result" aria-label="Close result">Close</button></div>
+        <div id="reflective-root"></div>
+        <section id="win" class="win" aria-label="Winning card mint options" hidden>
+          <p id="win-note"></p>
+          <button id="action" type="button">Mint this card with MetaMask</button>
+          <p id="status" class="status" role="status"></p>
+          <a id="mint-link" href="#receipt" hidden>See NFT and import details</a>
+        </section>
+        <section id="receipt" class="receipt" aria-labelledby="receipt-title" hidden>
+          <h2 id="receipt-title">Mint receipt</h2>
+          <dl><dt>Network</dt><dd id="receipt-network"></dd><dt>Contract address</dt><dd id="receipt-address"></dd><dt>Token ID</dt><dd id="token"></dd><dt>Owner at verification</dt><dd id="owner"></dd><dt>Transaction</dt><dd id="tx"></dd></dl>
+          <p>If MetaMask does not show the NFT, import it using this contract address and token ID.</p>
+          <button type="button" id="import" class="minor">Add NFT to MetaMask</button><p id="import-status" class="status" role="status"></p>
+          <details><summary>Inspect token metadata</summary><pre id="metadata"></pre></details>
+        </section>
       </div>
-    </section>
+    </dialog>
     <div class="bench">
       <section><h2>Your deck</h2><p id="deck-summary">Finish editing a collection to unlock the wheel.</p>
         <p class="mint-info">Minting uses tBNB for gas on BNB Smart Chain Testnet. The first mint creates your ERC-721 contract and issues your winning card in one transaction. Later wins use that contract.</p>
@@ -61,13 +71,7 @@
         </tbody></table>
       </section>
     </div>
-    <section id="receipt" class="receipt" aria-labelledby="receipt-title" hidden>
-      <h2 id="receipt-title">Mint receipt</h2>
-      <dl><dt>Network</dt><dd id="receipt-network"></dd><dt>Contract address</dt><dd id="receipt-address"></dd><dt>Token ID</dt><dd id="token"></dd><dt>Owner at verification</dt><dd id="owner"></dd><dt>Transaction</dt><dd id="tx"></dd></dl>
-      <p>To import manually, select this network in your wallet and enter the contract address and token ID in its NFT import form.</p>
-      <button type="button" id="import" class="minor">Add NFT to MetaMask</button><p id="import-status" class="status" role="status"></p>
-      <details><summary>Inspect token metadata</summary><pre id="metadata"></pre></details>
-    </section>
+
     <footer>Your deck and current win are saved in this browser. You can spin and reveal cards without a wallet.</footer>
   </main>
   <script type="module" src="./main.js"></script>

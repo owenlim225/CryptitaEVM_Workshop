@@ -3,6 +3,7 @@ import artifact from "../artifacts/Gacha.json" with {type:"json"};
 import { readDeck, cardMetadata, drawCard, imageSrc, tierNames } from "./cards.js";
 import { BSC_TESTNET, getMetaMask, switchNetwork, walletError } from "./wallet.js";
 import { initRoulette, revealRarity } from "./roulette.js";
+import { showResultCard } from "./components/result-card.jsx";
 
 const STORE = "cryptita.player-win.v2";
 const minterKey = account => "cryptita.player-minter.v2.97." + account;
@@ -37,11 +38,7 @@ function render() {
   $("action").disabled = busy || Boolean(win?.receipt);
   $("import").disabled = busy;
   if (!win) return;
-  $("card-image").src = imageSrc(win.card.image);
-  $("card-image").alt = win.card.name;
-  $("card-tier").textContent = tierNames[win.card.rarity];
-  $("card-name").textContent = win.card.name;
-  $("card-description").textContent = win.card.description;
+  showResultCard(win.card);
   $("win-note").textContent = win.receipt ? "Minted · Token #" + win.receipt.token
     : win.pending ? "Claim reserved for " + win.pending.account + " on BNB Smart Chain Testnet."
     : "Saved in this browser. You can mint this card whenever you’re ready.";
@@ -77,7 +74,7 @@ async function spin() {
   $("status").textContent = $("import-status").textContent = "";
   await revealRarity(card.rarity, card.name);
   render();
-  $("win").scrollIntoView({block:"nearest"});
+  $("result-dialog").showModal();
 }
 async function connect() {
   const wallet = getMetaMask();
@@ -193,6 +190,8 @@ async function importNft() {
 $("spin").onclick = () => run(spin, "deck-status");
 $("action").onclick = () => run(claim);
 $("import").onclick = () => run(importNft, "import-status");
+$("win-link").onclick = () => $("result-dialog").showModal();
+$("close-result").onclick = () => $("result-dialog").close();
 window.addEventListener("storage", e => { if (!e.key || e.key === STORE) location.reload(); });
 window.addEventListener("pageshow", e => { if (e.persisted) location.reload(); });
 

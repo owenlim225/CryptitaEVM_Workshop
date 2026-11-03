@@ -13,7 +13,11 @@
   },
   "dependencies": {
     "@openzeppelin/contracts": "5.4.0",
-    "ethers": "^6.15.0"
+    "@hugeicons/core-free-icons": "^4.4.0",
+    "@hugeicons/react": "^1.1.10",
+    "ethers": "^6.15.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
   },
   "devDependencies": {
     "hardhat": "~2.28.0",

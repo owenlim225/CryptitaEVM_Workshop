@@ -6,6 +6,7 @@ const file = (path) => fileURLToPath(new URL(path, import.meta.url));
 export default defineConfig({
   root: file("./web"),
   base: "./",
+  esbuild: { jsx: "automatic" },
   build: {
     outDir: file("./dist"),
     emptyOutDir: true,
