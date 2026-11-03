@@ -1,47 +1,35 @@
 # Facilitator guide
 
-Allow three hours, including a ten-minute break. Students need basic JavaScript, a browser and an editor. A funded MetaMask account on **BNB Smart Chain Testnet (97)** is required for the optional on-chain mint.
+The [README](../README.md) is the exact student build procedure. The [participant guide](PARTICIPANT.md) gives a three-hour schedule. Students begin from a generated starter, complete seven TODOs, personalize the app, then mint their own winner on **BNB Smart Chain Testnet (97)**.
 
-## Rehearse before class
+## Before class
 
-Run `npm ci`, `npm test`, `npm run build` and `npm run dev` in a fresh checkout. Try a one-card deck, then a deck with two tiers. Confirm that card creation, finishing the collection and rolling work with MetaMask disconnected. Arrange tBNB for live signing and test an independent RPC endpoint for the [inspector exercise](exercises/inspect-token.mjs). [Official faucet](https://www.bnbchain.org/en/testnet-faucet)
+1. In a fresh reference checkout run <code>npm ci</code>, <code>npm test</code>, <code>npm run build</code> and <code>npm run dev</code>. Check <code>/deploy</code>, a two-tier deck, a spin and the winner dialog.
+2. Generate a starter with <code>node workshop/create-starter.mjs ../rehearsal-gacha</code>. Check that it has seven TODOs, compiles, and that the contract, card and wallet tests initially fail. Complete the README snippets in that copy and verify all ten tests pass. The reference repository remains the answer key.
+3. Arrange test tBNB for a contract creation and a later mint per student or pair. Use a dedicated MetaMask test account. Review the [BNB Chain faucet guide](https://docs.bnbchain.org/docs/bsc-faucet/) and test a chain-97 RPC endpoint before class.
+4. Rehearse a public first mint and later mint in the same browser and account. Keep their BscScan links. Verify token ownership and the JSON URI with the inspector. Do not substitute an in-memory test receipt for this checkpoint.
+5. Remind participants that no private key or recovery phrase belongs in a file, form, chat or screenshot. MetaMask signs in the browser.
 
-In the same account and browser, mint two different winners. Capture the first receipt's contract address and token ID. The later mint should target the same address. Check current ownership, both tokens' distinct metadata and MetaMask import. Keep public chain-97 receipts separate from automated test output. Students create their contracts through their own first mint.
+## Teaching checkpoints
 
-## Run of show
+| Stage | Ask the student |
+| --- | --- |
+| Contract | Which transaction deploys the contract? Why does <code>msg.sender</code> receive token #1? Why is a repeat win ID rejected? |
+| Draw | If the deck has only SSR and UR, what are their odds? Why do two SSR cards share the SSR chance? |
+| Wallet | What does chain ID 97 prevent? What does MetaMask show before a transaction is sent? |
+| Integration | Where do the ABI and bytecode come from? Why does the first mint have no <code>to</code> contract address? |
+| Verification | Do <code>ownerOf</code> and <code>tokenURI</code> match the recorded winner? What would change after transfer? |
 
-| Elapsed | Agenda | Instructor move |
-| --- | --- | --- |
-| 00:00–00:10 | Welcome and objectives | Each pair creates cards, finishes its collection and rolls. Record the winner's photo and fields before signing anything. |
-| 00:10–00:25 | Blockchain integration and Web3 architecture | Trace browser inputs, first mint and later mint. Ask for the probabilities of SSR and UR when only those two tiers exist. |
-| 00:25–00:45 | Environment and wallet setup | Install dependencies. Verify MetaMask account, chain ID 97 and tBNB balance. Learners awaiting funding can pair with a funded participant. |
-| 00:45–01:15 | Solidity development | Contrast the hardcoded URI in the supplied NFTA.sol example with per-token metadata. Students implement the duplicate guard in challenge 1. |
-| 01:15–01:35 | Compile, test and prepare | Run the regression and locate ABI and bytecode. Identify constructor and mint parameters. |
-| 01:35–01:45 | Break | Keep the winning card and browser profile available. |
-| 01:45–02:05 | Testnet deployment | Demonstrate the combined contract creation and first mint. Inspect the receipt's Transfer event. |
-| 02:05–02:25 | Frontend integration | Trace ownerOf and tokenURI in the ABI. Pairs implement the inspector. |
-| 02:25–02:45 | Wallet interaction | Students mint their winner, check the recipient and import the NFT into MetaMask. |
-| 02:45–03:00 | Test, troubleshoot and finalize | Reject a later mint, retry, compare both receipts and inspect the exact card. |
+## Troubleshooting
 
-## Answer key
+- **Starter was generated inside the reference repository or destination exists:** choose a new sibling folder, such as <code>../student-gacha-2</code>. The generator deliberately refuses overwrite.
+- **Contract compile fails:** compare the two replaced Solidity functions with README §3. Compile generates <code>artifacts/Gacha.json</code>.
+- **Tests fail after a TODO:** check the exact named function and its return type. The initial red tests are expected; the completed project should pass ten tests.
+- **Wallet prompt missing or wrong extension responds:** enable and unlock MetaMask in the current browser profile, reload, and check the network. The app requests account access only when minting.
+- **Insufficient funds or stalled mint:** verify the selected account and tBNB balance, check MetaMask activity and BscScan, then use **Check mint status**. A first mint includes contract creation.
+- **NFT not visible:** use the current account on chain 97 and manually import the contract address plus token ID. Check <code>ownerOf</code> independently.
+- **Inspector cannot read:** use a different BNB Smart Chain Testnet RPC with <code>WORKSHOP_RPC_URL</code>. The inspector does not need a private key.
 
-**Challenge 1.** The sender and win ID together key the mapping on this contract. Check it before minting. A nonzero value identifies the token already minted, including after it is transferred.
+## Finish check
 
-```solidity
-uint256 previousToken = mintedToken[msg.sender][winId];
-if (previousToken != 0) revert AlreadyMinted(previousToken);
-```
-
-**Challenge 2.** Replace the body of `readCard` in the instructor's working copy:
-
-```js
-const owner = await contract.ownerOf(id);
-const uri = await contract.tokenURI(id);
-const prefix = "data:application/json;base64,";
-if (!uri.startsWith(prefix)) throw new Error("Unexpected metadata URI");
-const card = JSON.parse(Buffer.from(uri.slice(prefix.length), "base64").toString("utf8"));
-const rarity = card.attributes.find(attribute => attribute.trait_type === "Rarity").value;
-return { owner, name: card.name, description: card.description, image: card.image, rarity };
-```
-
-**Finish check.** Ask the pair for its original winner, successful public mint hash, contract address, token ID, current owner and independently decoded metadata. Ask what stays in the browser, what the successful mint publishes, and what bytes a remote image URL actually preserves. If a pair could only complete the off-chain steps, record those steps and leave the public mint checkpoint open.
+Ask each student to show an edited app, the winner recorded before minting, a successful **public** chain-97 transaction, contract address, token ID, current owner and independently decoded metadata. Ask them to state that the browser controls the draw, so the workshop contract must not be used for paid prizes. If public funding was unavailable, record that checkpoint as incomplete and keep the student's passing local tests as separate evidence.

@@ -1,19 +1,26 @@
-# Rarity Roulette implementation plan
+# Workshop scope and acceptance
 
-A student creates cards locally, rolls once and optionally mints that exact winner into MetaMask. The facilitator can run the class from the same repository as the students. One three-hour session covers the nine agenda topics.
+The [README](README.md) is the canonical student procedure. The reference repository is the completed Next.js gacha app; <code>workshop/create-starter.mjs</code> creates a separate student copy with seven TODOs. The [participant guide](workshop/PARTICIPANT.md) owns class timing, and the [facilitator guide](workshop/FACILITATOR.md) owns rehearsal and assessment.
 
-| Sequence | Owner | Deliverable and acceptance check |
-| --- | --- | --- |
-| 1. Align the game and lab | Project lead | Define a card (name, description, photo, rarity), a collection (the student's local deck), a win (one draw) and a token (one minted winner). Agree on the six-step flow in the README. |
-| 2. Implement the ERC-721 | Contract subagent | Constructor on chain 97 mints the first winner to the sender. Subsequent calls use `mint(winId, metadataJson)`. Store metadata per token, enforce the 8,192-byte limit and prevent reuse of a win ID by that sender on the same contract. |
-| 3. Implement editor and wheel | Web subagent | Add/edit cards individually. Finish a 1–25 card deck using any tiers. Spin without a wallet, renormalize weights over present tiers, and display the winning name, description, photo and rarity. |
-| 4. Integrate mint and import | Project lead with web subagent | Check MetaMask network and account, deploy-and-mint on first approval, reuse the correct account's contract for subsequent wins and show receipt, contract address, token ID and NFT import instructions. |
-| 5. Write the course | Curriculum subagent | Cover all nine agenda topics. Teach deployment from the first mint, sender-scoped win IDs, weighted draws, metadata inspection and MetaMask import. |
-| 6. Verify and fix | Project lead with owning subagent | Install from lockfile, run tests and build. Exercise a single-card deck and partial-tier deck, mint the exact winning metadata twice with distinct win IDs, reject a duplicate and test rejected wallet requests. Return failures to their owners and rerun the affected check and full suite. |
-| 7. Run class and collect evidence | Facilitator and participants | Each pair records one winning card and a successful chain-97 mint receipt. Independently compare current owner, name, description, image URI and rarity. |
+## In scope
 
-## Scope and verification
+1. Students implement the ERC-721 mint and token URI, card JSON metadata, represented-rarity draw, MetaMask network switch and wallet connection.
+2. Students personalize their collection and app, create cards, spin and record a winner.
+3. The first wallet transaction deploys their contract and mints that winner on BNB Smart Chain Testnet (97). Later mints reuse the contract for that account in the same browser.
+4. Students import or view the NFT in MetaMask and independently read its owner and metadata from the public chain.
 
-Card editing and drawing are off-chain. The NFT mint price is zero and participants pay test gas. Browser-supplied metadata is appropriate for learner-authored cards. Paid draws, marketplaces, mainnet and verifiable prize randomness are outside this lesson.
+## Exclusions
 
-For automated contract checks, use the in-memory test chain configured as chain 97. Production build and test results establish software behavior. The public-chain checkpoint requires the participant's successful transaction on [BscScan Testnet](https://testnet.bscscan.com/). The facilitator rehearses the [six-step flow](README.md#play-in-six-steps) before class. A failed classroom step goes back to its accountable owner.
+No private-key deployment, Base Sepolia, mandatory Pinata upload, ABI Ninja, mainnet, paid draws, marketplace integration or verifiable prize randomness. Browser-selected winners are suitable only for classroom collectibles.
+
+## Acceptance checks
+
+| Check | Evidence |
+| --- | --- |
+| Starter generation | New sibling folder with seven TODOs; existing folder is never overwritten |
+| Local implementation | <code>npm test</code> passes ten tests after the TODOs; <code>npm run build</code> creates the Next.js routes <code>/</code> and <code>/deploy</code> |
+| Off-chain play | A 1–25 card deck can draw from only its represented rarities without a wallet |
+| Public mint | Successful chain-97 transaction with contract address, token ID, recipient and testnet explorer link |
+| Independent verification | <code>ownerOf</code> and decoded <code>tokenURI</code> match the recorded winner and current owner |
+
+The public mint check requires an actual testnet transaction. In-memory Hardhat tests establish local behavior but cannot prove that the student completed the public-chain step.
