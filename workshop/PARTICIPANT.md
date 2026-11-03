@@ -53,7 +53,7 @@ In your own working copy, locate the existing duplicate check inside `_mintCard`
 
 ## 5. Compile, test and prepare for deployment · 20 min
 
-Run `npm test` after restoring your guard. Find the ABI and bytecode in `artifacts/Gacha.json`. Identify the first-mint constructor inputs and compare them with the parameters of `mint`. In a terminal run `npm run build` and confirm the static site is generated in `dist/`.
+Run `npm test` after restoring your guard. Find the ABI and bytecode in `artifacts/Gacha.json`. Identify the first-mint constructor inputs and compare them with the parameters of `mint`. In a terminal run `npm run build` and confirm the Next.js production build is generated in `.next/`.
 
 **Checkpoint.** Explain what the ABI allows the app to encode, what bytecode MetaMask submits on a first mint, and why a second mint in the same contract sends a function call. Automated contract tests simulate chain 97 in memory.
 

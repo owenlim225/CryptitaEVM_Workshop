@@ -1,5 +1,5 @@
 import { BrowserProvider, Contract, ContractFactory, getAddress, getCreateAddress, hexlify, randomBytes, toQuantity } from "ethers";
-import artifact from "../artifacts/Gacha.json" with {type:"json"};
+import artifact from "../artifacts/Gacha.json";
 import { readDeck, cardMetadata, drawCard, imageSrc, tierNames } from "./cards.js";
 import { BSC_TESTNET, getMetaMask, switchNetwork, walletError } from "./wallet.js";
 import { initRoulette, revealRarity } from "./roulette.js";
@@ -33,16 +33,18 @@ function render() {
   $("spin").textContent = win ? "Spin again" : "Spin the wheel";
   $("edit").textContent = deck.length ? "Edit collection" : "Create a collection";
   $("edit").className = deck.length ? "jump" : "button-link";
-  $("win").hidden = $("win-link").hidden = !win;
-  $("receipt").hidden = $("mint-link").hidden = !win?.receipt;
-  $("action").disabled = busy || Boolean(win?.receipt);
+  $("win-link").hidden = !win;
+  $("win").hidden = !win || Boolean(win?.receipt);
+  $("receipt").hidden = !win?.receipt;
+  $("action").hidden = Boolean(win?.receipt);
+  $("action").disabled = busy;
   $("import").disabled = busy;
   if (!win) return;
   showResultCard(win.card);
-  $("win-note").textContent = win.receipt ? "Minted · Token #" + win.receipt.token
+  $("win-note").textContent = win.receipt ? ""
     : win.pending ? "Claim reserved for " + win.pending.account + " on BNB Smart Chain Testnet."
     : "Saved in this browser. You can mint this card whenever you’re ready.";
-  $("action").textContent = win.receipt ? "Card minted" : win.pending ? "Check mint status" : "Mint this card with MetaMask";
+  $("action").textContent = win.pending ? "Check mint status" : "Mint this card with MetaMask";
   if (!win.receipt) return;
   const r = win.receipt;
   $("receipt-network").textContent = BSC_TESTNET.chainName + " (97)";
@@ -100,7 +102,7 @@ async function verifyMint(provider, pending) {
   localStorage.setItem(minterKey(pending.account), JSON.stringify({address:pending.address, winId:win.id}));
   save({...win, pending:null, receipt});
   $("status").textContent = "Mint confirmed. Use the receipt below to import your NFT.";
-  render(); $("receipt").scrollIntoView({block:"nearest"});
+  render();
   return true;
 }
 async function prepare(provider, account) {

@@ -1,6 +1,10 @@
-# Cryptita Plays · Rarity Roulette
+# Blockchain Integration & Web3: From Smart Contracts to a Functional Web Application
 
-Make a small deck, spin the wheel, and mint the card you won into MetaMask on **BNB Smart Chain Testnet**. Creating cards and spinning happen in the browser. Only a winner you choose to mint goes on-chain.
+Build a gacha card app that creates a collection, draws a random winner, connects to MetaMask, and mints that winner as an ERC-721 NFT on **BNB Smart Chain Testnet**. The finished reference app in this repository is called **Rarity Roulette**. Creating cards and spinning happen in the browser. Only a winner you choose to mint goes on-chain.
+
+**Workshop outcome:** each student can explain the contract, run and adapt their own copy of the app, submit a testnet mint from their own MetaMask account, and verify that the NFT's owner and metadata match the winning card.
+
+**Terms used throughout:** a *card* is one local design; a *collection* is the student's saved deck; a *win* is one browser draw with a unique win ID; a *token* is the NFT minted for a win; a *contract* is the student's reusable ERC-721 collection. The first mint deploys the contract and creates token #1 in the same transaction.
 
 ## Play in six steps
 
@@ -21,7 +25,7 @@ npm test
 npm run dev
 ```
 
-Open the local URL printed by Vite. On Windows, `npm.cmd` works when PowerShell blocks the `npm` shim. To produce the static site in `dist/`, run `npm run build`.
+Open [http://localhost:5173](http://localhost:5173). The editor is at `/deploy`. The local URL keeps existing browser decks and wins available. On Windows, `npm.cmd` works when PowerShell blocks the `npm` shim. Run `npm run build` for the production build in `.next/`, then `npm start` to serve it.
 
 | Audience | Guide |
 | --- | --- |

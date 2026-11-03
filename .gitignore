@@ -2,5 +2,6 @@ node_modules/
 artifacts/
 cache/
 dist/
+.next/
 .env
 .env.*
