@@ -93,9 +93,10 @@ async function verifyMint(provider, pending) {
   const token = await nft.mintedToken(pending.account, win.id);
   if (!token) return false;
   const [owner, uri] = await Promise.all([nft.ownerOf(token), nft.tokenURI(token)]);
-  const prefix = "data:application/json;base64,";
-  if (!uri.startsWith(prefix)) throw Error("The contract returned an unreadable token URI. Keep the win and check its receipt.");
-  const json = new TextDecoder().decode(Uint8Array.from(atob(uri.slice(prefix.length)), c => c.charCodeAt(0)));
+  if (uri !== win.metadataUri) throw Error("The token URI differs from the uploaded winning card. Check the mint receipt.");
+  const response = await fetch("https://ipfs.io/ipfs/" + uri.slice(7));
+  if (!response.ok) throw Error("The uploaded metadata is not available yet. Check mint status again shortly.");
+  const json = await response.text();
   if (json !== cardMetadata(win.card)) throw Error("The token metadata differs from the winning card. Check the mint receipt.");
   // mintedToken is keyed by the original recipient. The token may have moved since minting.
   const receipt = {address:pending.address, token:String(token), owner, hash:pending.hash};
@@ -110,7 +111,11 @@ async function prepare(provider, account) {
   const known = JSON.parse(localStorage.getItem(minterKey(account)));
   if (known && await provider.getCode(known.address) !== "0x") {
     const nft = new Contract(known.address, artifact.abi, provider);
-    if (!await nft.mintedToken(account, known.winId)) throw Error("Could not verify the saved minter for this account.");
+    const previousToken = await nft.mintedToken(account, known.winId);
+    if (!previousToken) throw Error("Could not verify the saved minter for this account.");
+    if (!(await nft.tokenURI(previousToken)).startsWith("ipfs://")) {
+      return {account, address:getCreateAddress({from:account, nonce}), nonce, create:true};
+    }
     return {account, address:known.address, nonce, create:false};
   }
   return {account, address:getCreateAddress({from:account, nonce}), nonce, create:true};
@@ -146,10 +151,20 @@ async function claim() {
       }
       if (!window.confirm("No pending transaction is visible. Retry this same win using the original transaction nonce?")) return;
     }
-    const json = cardMetadata(win.card);
+    let metadataUri = win.metadataUri;
+    if (!metadataUri) {
+      $("status").textContent = "Uploading the winning card metadata to IPFS…";
+      const response = await fetch("/api/metadata", {
+        method:"POST", headers:{"Content-Type":"application/json"}, body:cardMetadata(win.card)
+      });
+      const result = await response.json();
+      if (!response.ok) throw Error(result.error || "Metadata upload failed.");
+      metadataUri = result.uri;
+      save({...win, metadataUri});
+    }
     const factory = new ContractFactory(artifact.abi, artifact.bytecode);
-    const tx = pending.create ? await factory.getDeployTransaction(win.id, json)
-      : {to:pending.address, data:factory.interface.encodeFunctionData("mint", [win.id, json])};
+    const tx = pending.create ? await factory.getDeployTransaction(win.id, metadataUri)
+      : {to:pending.address, data:factory.interface.encodeFunctionData("mint", [win.id, metadataUri])};
     save({...win, pending});
     $("status").textContent = pending.create ? "Confirm your first mint and contract creation in MetaMask." : "Confirm your winning card in MetaMask.";
     let hash;

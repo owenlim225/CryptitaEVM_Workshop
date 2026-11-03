@@ -4,10 +4,10 @@ Follow the numbered instructions in the [README](../README.md). This page is you
 
 | Time | Build step | Show at the checkpoint |
 | --- | --- | --- |
-| 00:00–00:20 | README §§1–2: install, wallet, inspect finished target, generate starter | Separate project folder, dedicated MetaMask test account, chain 97 |
+| 00:00–00:20 | README §§1–2: install, wallet, Pinata key, inspect finished target, generate starter | Separate project folder, dedicated MetaMask test account, chain 97 |
 | 00:20–00:50 | §3: implement the ERC-721 mint and token URI | Contract tests pass; identify ABI and bytecode |
 | 00:50–01:20 | §4: encode card JSON and weighted draw | Card/roulette tests pass; explain SSR:UR = 4:1 |
-| 01:20–01:45 | §5: network switching and wallet connection | Ten automated tests pass |
+| 01:20–01:45 | §5: network switching and wallet connection | Twelve automated tests pass |
 | 01:45–01:55 | Break | Keep your project and browser profile open |
 | 01:55–02:15 | §6: name your app and collection, create cards, spin | Record the pre-mint winner |
 | 02:15–02:40 | §7: MetaMask mint on BNB Smart Chain Testnet | Successful receipt, contract address, token ID, account |
@@ -22,9 +22,10 @@ The path through the system is:
 
 ~~~text
 Local card editor → saved deck → weighted draw → winner + win ID
+Pinata upload → public IPFS metadata URI
 First wallet approval → contract creation + token #1
 Later wallet approval → mint on saved contract → next token
-Public read → ownerOf + tokenURI → compare with original winner
+Public read → ownerOf + tokenURI → IPFS JSON → compare with original winner
 ~~~
 
 ## Evidence to keep

@@ -5,7 +5,7 @@ The [README](../README.md) is the exact student build procedure. The [participan
 ## Before class
 
 1. In a fresh reference checkout run <code>npm ci</code>, <code>npm test</code>, <code>npm run build</code> and <code>npm run dev</code>. Check <code>/deploy</code>, a two-tier deck, a spin and the winner dialog.
-2. Generate a starter with <code>node workshop/create-starter.mjs ../rehearsal-gacha</code>. Check that it has seven TODOs, compiles, and that the contract, card and wallet tests initially fail. Complete the README snippets in that copy and verify all ten tests pass. The reference repository remains the answer key.
+2. Generate a starter with <code>node workshop/create-starter.mjs ../rehearsal-gacha</code>. Check that it has seven TODOs, compiles, and that the contract, card and wallet tests initially fail. Complete the README snippets in that copy and verify all twelve tests pass. The reference repository remains the answer key.
 3. Arrange test tBNB for a contract creation and a later mint per student or pair. Use a dedicated MetaMask test account. Review the [BNB Chain faucet guide](https://docs.bnbchain.org/docs/bsc-faucet/) and test a chain-97 RPC endpoint before class.
 4. Rehearse a public first mint and later mint in the same browser and account. Keep their BscScan links. Verify token ownership and the JSON URI with the inspector. Do not substitute an in-memory test receipt for this checkpoint.
 5. Remind participants that no private key or recovery phrase belongs in a file, form, chat or screenshot. MetaMask signs in the browser.
@@ -24,7 +24,7 @@ The [README](../README.md) is the exact student build procedure. The [participan
 
 - **Starter was generated inside the reference repository or destination exists:** choose a new sibling folder, such as <code>../student-gacha-2</code>. The generator deliberately refuses overwrite.
 - **Contract compile fails:** compare the two replaced Solidity functions with README §3. Compile generates <code>artifacts/Gacha.json</code>.
-- **Tests fail after a TODO:** check the exact named function and its return type. The initial red tests are expected; the completed project should pass ten tests.
+- **Tests fail after a TODO:** check the exact named function and its return type. The initial red tests are expected; the completed project should pass twelve tests.
 - **Wallet prompt missing or wrong extension responds:** enable and unlock MetaMask in the current browser profile, reload, and check the network. The app requests account access only when minting.
 - **Insufficient funds or stalled mint:** verify the selected account and tBNB balance, check MetaMask activity and BscScan, then use **Check mint status**. A first mint includes contract creation.
 - **NFT not visible:** use the current account on chain 97 and manually import the contract address plus token ID. Check <code>ownerOf</code> independently.
@@ -32,4 +32,4 @@ The [README](../README.md) is the exact student build procedure. The [participan
 
 ## Finish check
 
-Ask each student to show an edited app, the winner recorded before minting, a successful **public** chain-97 transaction, contract address, token ID, current owner and independently decoded metadata. Ask them to state that the browser controls the draw, so the workshop contract must not be used for paid prizes. If public funding was unavailable, record that checkpoint as incomplete and keep the student's passing local tests as separate evidence.
+Ask each student to show an edited app, the winner recorded before minting, a successful **public** chain-97 transaction, contract address, token ID, current owner and metadata independently fetched from IPFS. Ask them to state that the browser controls the draw, so the workshop contract must not be used for paid prizes. If public funding was unavailable, record that checkpoint as incomplete and keep the student's passing local tests as separate evidence.

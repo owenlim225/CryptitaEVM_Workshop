@@ -42,14 +42,14 @@ async function replace(file, from, to, placeholder) {
   await writeFile(path, source.slice(0, start) + placeholder + source.slice(end));
 }
 
-await replace("contracts/Gacha.sol", "    function _mintCard(", "    function tokenURI(", `    function _mintCard(bytes32 winId, string memory metadataJson) private returns (uint256 tokenId) {
+await replace("contracts/Gacha.sol", "    function _mintCard(", "    function tokenURI(", `    function _mintCard(bytes32 winId, string memory metadataUri) private returns (uint256 tokenId) {
         // TODO 1: validate, remember and mint this win.
         revert("Complete _mintCard in the README");
     }
 
 `);
 await replace("contracts/Gacha.sol", "    function tokenURI(", "\n}", `    function tokenURI(uint256 tokenId) public view override returns (string memory) {
-        // TODO 2: return this token's base64-encoded JSON data URI.
+        // TODO 2: return this token's IPFS metadata URI.
         _requireOwned(tokenId);
         return "";
     }`);

@@ -6,7 +6,7 @@ import artifact from "../artifacts/Gacha.json" with { type: "json" };
 
 let game, factory, player, other;
 const firstWin = id("first win");
-const firstCard = JSON.stringify({ name: "Lantern", description: "An illustrated card." });
+const firstUri = "ipfs://bafybeigdyrzt5n5vy7z4hxgqstnqzz6p4d2t2qxj5qj3g5mbr4qle3x3yy";
 
 before(async () => {
   hre.network.config.chainId = 97;
@@ -14,7 +14,7 @@ before(async () => {
   player = await provider.getSigner(0);
   other = await provider.getSigner(1);
   factory = new ContractFactory(artifact.abi, artifact.bytecode, player);
-  game = await factory.deploy(firstWin, firstCard);
+  game = await factory.deploy(firstWin, firstUri);
   await game.waitForDeployment();
 });
 
@@ -30,39 +30,37 @@ test("recovering a previous win returns its original token, even after a transfe
   const from = await player.getAddress();
   const to = await other.getAddress();
   assert.equal(await game.mintedToken(from, firstWin), 1n);
-  await expectRevert(game.mint.staticCall(firstWin, '{"name":"edited"}'), "AlreadyMinted", [1]);
+  await expectRevert(game.mint.staticCall(firstWin, "ipfs://bafyedited"), "AlreadyMinted", [1]);
   await (await game.transferFrom(from, to, 1n)).wait();
   assert.equal(await game.ownerOf(1n), to);
   assert.equal(await game.mintedToken(from, firstWin), 1n);
-  assert.equal(await game.tokenURI(1n), "data:application/json;base64," + Buffer.from(firstCard).toString("base64"));
-  await expectRevert(game.mint.staticCall(firstWin, firstCard), "AlreadyMinted", [1]);
+  assert.equal(await game.tokenURI(1n), firstUri);
+  await expectRevert(game.mint.staticCall(firstWin, firstUri), "AlreadyMinted", [1]);
 });
 
 test("the same win identifier can be used independently by another account", async () => {
   const recipient = await other.getAddress();
-  const card = JSON.stringify({ name: "Second learner", attributes: [{ trait_type: "Rarity", value: "UR" }] });
+  const uri = "ipfs://bafybeih2ejr7xgpgbnpk7j2tlpshrz5t6w5v32xvr6jeyg2p6x6cy6s6ia";
   assert.equal(await game.mintedToken(recipient, firstWin), 0n);
-  await (await game.connect(other).mint(firstWin, card)).wait();
+  await (await game.connect(other).mint(firstWin, uri)).wait();
   const token = await game.mintedToken(recipient, firstWin);
   assert.ok(token > 1n);
   assert.equal(await game.ownerOf(token), recipient);
-  assert.equal(await game.tokenURI(token), "data:application/json;base64," + Buffer.from(card).toString("base64"));
-  await expectRevert(game.connect(other).mint.staticCall(firstWin, card), "AlreadyMinted", [token]);
+  assert.equal(await game.tokenURI(token), uri);
+  await expectRevert(game.connect(other).mint.staticCall(firstWin, uri), "AlreadyMinted", [token]);
 });
 
-test("deployment and later mints reject unusable IDs and out-of-range UTF-8 byte lengths", async () => {
+test("deployment and later mints reject unusable IDs and metadata URIs", async () => {
   const win = id("input validation");
-  const tooLong = "é".repeat(4096) + "!";
-  for (const submit of [(key, json) => factory.deploy(key, json), (key, json) => game.mint(key, json)]) {
-    await expectRevert(submit(ZeroHash, firstCard), "InvalidWinId", []);
-    await expectRevert(submit(win, ""), "InvalidMetadataSize", [0]);
-    await expectRevert(submit(win, tooLong), "InvalidMetadataSize", [8193]);
+  for (const submit of [(key, uri) => factory.deploy(key, uri), (key, uri) => game.mint(key, uri)]) {
+    await expectRevert(submit(ZeroHash, firstUri), "InvalidWinId", []);
+    for (const uri of ["", "https://example.com/card.json", "ipfs://", "ipfs://" + "a".repeat(122)]) {
+      await expectRevert(submit(win, uri), "InvalidMetadataURI", []);
+    }
   }
-  const atLimit = JSON.stringify("é".repeat(4095));
-  assert.equal(Buffer.byteLength(atLimit), 8192);
-  await (await game.mint(win, atLimit)).wait();
+  await (await game.mint(win, firstUri)).wait();
   assert.ok(await game.mintedToken(await player.getAddress(), win) > 0n);
   await assert.rejects(game.tokenURI(0));
-  await assert.rejects(game.mint(id("paid"), firstCard, { value: 1n }));
+  await assert.rejects(game.mint(id("paid"), firstUri, { value: 1n }));
 });
 

@@ -19,7 +19,7 @@ try {
 }
 
 async function readCard(contract, id) {
-  // TODO: Read ownerOf(id) and tokenURI(id). Decode the base64 JSON.
+  // TODO: Read ownerOf(id) and tokenURI(id), then fetch the JSON from IPFS.
   // Return the owner, name, description, image URI and Rarity attribute.
   throw new Error("Complete readCard in module 7 of the participant guide");
 }

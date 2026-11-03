@@ -14,7 +14,7 @@ By the end, you should have a locally running app that lets you create a 1–25 
 | Token | The on-chain NFT created for a chosen win |
 | Contract | Your reusable ERC-721 collection on chain 97 |
 
-Cards and draws are local. Only the winner you choose to mint is written on-chain. The browser supplies the result and metadata, so this is a classroom collectible, not a trustworthy paid prize draw. Paid spins, mainnet, marketplaces, and provably fair randomness are outside this workshop.
+Cards and draws are local. When you mint, the winning card's JSON is uploaded to public IPFS through Pinata, and only its IPFS URI is written on-chain. The browser supplies the result and metadata, so this is a classroom collectible, not a trustworthy paid prize draw. Paid spins, mainnet, marketplaces, and provably fair randomness are outside this workshop.
 
 ## 1. Prepare your computer and wallet
 
@@ -31,7 +31,9 @@ Cards and draws are local. Only the winner you choose to mint is written on-chai
 4. In MetaMask, choose your test account. Add **BNB Smart Chain Testnet** if it is missing: network name <code>BNB Smart Chain Testnet</code>, RPC <code>https://bsc-testnet-dataseed.bnbchain.org</code>, chain ID <code>97</code>, currency symbol <code>tBNB</code>, explorer <code>https://testnet.bscscan.com</code>. The app can also ask MetaMask to add or switch to this network. Check the chain ID before signing. See [BNB Chain's network settings](https://docs.bnbchain.org/bnb-smart-chain/developers/wallet-configuration/) and [RPC list](https://docs.bnbchain.org/bnb-smart-chain/developers/json_rpc/json-rpc-endpoint/).
 5. Get test tBNB from the [BNB Chain faucet guide](https://docs.bnbchain.org/docs/bsc-faucet/) or your facilitator. Contract creation needs more gas than a later mint. Do not move real BNB to the test account for this lab.
 
-**No private key or recovery phrase goes into this project.** MetaMask signs transactions in the browser. The old Base Sepolia NFT exercise used a private key, Pinata JSON, a Hardhat deployment command and ABI Ninja. This project uses BNB Smart Chain Testnet, builds JSON from each winning card, and deploys through MetaMask, so those old steps do not apply. Pinata is optional if you want a permanent image URL.
+6. Create a [Pinata API key](https://docs.pinata.cloud/frameworks/next-js#create-an-api-key-and-get-gateway-url). Put its JWT in a new <code>.env.local</code> file in the project root as <code>PINATA_JWT=your-jwt</code>. Keep that file private; it is ignored by Git. Restart the dev server after adding it. The server uploads winning-card JSON to public IPFS before MetaMask opens. The upload endpoint is intended for this local workshop; add authentication and rate limits before deploying it publicly.
+
+**No private key or recovery phrase goes into this project.** MetaMask signs transactions in the browser. The Pinata JWT stays on the server and is never sent to the browser. An image can still use an HTTPS or <code>ipfs://</code> URL; a local thumbnail becomes part of the uploaded JSON.
 
 ## 2. See the finished target, then create your starter
 
@@ -59,26 +61,28 @@ Cards and draws are local. Only the winner you choose to mint is written on-chai
 Open <code>contracts/Gacha.sol</code>. The constructor calls <code>_mintCard</code> so the deployment transaction issues the first NFT. The public <code>mint</code> function uses the same routine for later wins. Replace the two TODO functions with:
 
 ~~~solidity
-function _mintCard(bytes32 winId, string memory metadataJson) private returns (uint256 tokenId) {
+function _mintCard(bytes32 winId, string memory metadataUri) private returns (uint256 tokenId) {
     if (winId == bytes32(0)) revert InvalidWinId();
     uint256 previousToken = mintedToken[msg.sender][winId];
     if (previousToken != 0) revert AlreadyMinted(previousToken);
-    uint256 size = bytes(metadataJson).length;
-    if (size == 0 || size > 8192) revert InvalidMetadataSize(size);
+    bytes memory uri = bytes(metadataUri);
+    if (uri.length < 8 || uri.length > 128 ||
+        uri[0] != 'i' || uri[1] != 'p' || uri[2] != 'f' || uri[3] != 's' ||
+        uri[4] != ':' || uri[5] != '/' || uri[6] != '/') revert InvalidMetadataURI();
 
     tokenId = nextTokenId++;
     mintedToken[msg.sender][winId] = tokenId;
-    metadata[tokenId] = metadataJson;
+    tokenUris[tokenId] = metadataUri;
     _safeMint(msg.sender, tokenId);
 }
 
 function tokenURI(uint256 tokenId) public view override returns (string memory) {
     _requireOwned(tokenId);
-    return string.concat("data:application/json;base64,", Base64.encode(bytes(metadata[tokenId])));
+    return tokenUris[tokenId];
 }
 ~~~
 
-The duplicate check is scoped to <code>msg.sender</code> and win ID. It prevents that sender from minting the same win twice, even after transferring the first NFT. Token IDs start at 1, so zero means “not minted.” The 8,192 limit is in **UTF-8 bytes**, not characters.
+The duplicate check is scoped to <code>msg.sender</code> and win ID. It prevents that sender from minting the same win twice, even after transferring the first NFT. Token IDs start at 1, so zero means “not minted.” The contract stores an <code>ipfs://</code> URI of at most 128 bytes; the upload endpoint limits the JSON to 8,192 **UTF-8 bytes**.
 
 Run:
 
@@ -171,9 +175,9 @@ async function connect() {
 }
 ~~~
 
-Trace the supplied <code>claim</code> function in that same file. It reads the compiled ABI and bytecode, prepares a contract-creation transaction for the first mint, asks MetaMask to send it, waits for a receipt, and verifies <code>mintedToken</code>, <code>ownerOf</code> and <code>tokenURI</code>. For later wins it calls <code>mint</code> on the saved contract. The pending transaction code lets the user return after an interrupted confirmation.
+Trace the supplied <code>claim</code> function in that same file. It uploads the winning-card JSON to Pinata, saves the returned URI with the win, reads the compiled ABI and bytecode, prepares a contract-creation transaction for the first mint, asks MetaMask to send it, waits for a receipt, and verifies <code>mintedToken</code>, <code>ownerOf</code>, <code>tokenURI</code> and the fetched JSON. For later wins it calls <code>mint</code> on the saved contract. The pending transaction code lets the user return after an interrupted confirmation without uploading a different URI.
 
-Run <code>npm test</code>. All ten automated tests should pass before you try a public testnet mint.
+Run <code>npm test</code>. All twelve automated tests should pass before you try a public testnet mint.
 
 ## 6. Make the app yours and run it
 
@@ -187,7 +191,7 @@ Run <code>npm test</code>. All ten automated tests should pass before you try a 
 ## 7. Mint the winner on BNB Smart Chain Testnet
 
 1. Unlock MetaMask. Check the selected test account, chain ID **97**, and its tBNB balance.
-2. On the winner, choose **Mint this card with MetaMask**. Approve the account and network prompts if shown.
+2. On the winner, choose **Mint this card with MetaMask**. The app uploads its metadata to public IPFS first. Approve the account and network prompts if shown.
 3. Review the wallet transaction. Your **first** mint is contract creation and should require test tBNB for gas. Confirm it and wait for the app's receipt. If you reject it, the card stays available to retry.
 4. Record the contract address, token ID, receiving account and transaction hash shown by the app. Open the transaction on [BscScan Testnet](https://testnet.bscscan.com/) and check that it succeeded. The ERC-721 <code>Transfer</code> event should have the zero address as sender and your account as recipient.
 5. Choose **Add NFT to MetaMask**. If your MetaMask version does not import it automatically, open its **NFTs → Import NFT** screen and enter the **contract address and token ID** on BNB Smart Chain Testnet. The transaction hash is not the NFT address. See [MetaMask's NFT import guide](https://support.metamask.io/nfts/nft-tokens-in-your-metamask-wallet/).
@@ -202,9 +206,10 @@ Open <code>workshop/exercises/inspect-token.mjs</code> in your student project. 
 ~~~js
 const owner = await contract.ownerOf(id);
 const uri = await contract.tokenURI(id);
-const prefix = "data:application/json;base64,";
-if (!uri.startsWith(prefix)) throw new Error("Unexpected metadata URI");
-const card = JSON.parse(Buffer.from(uri.slice(prefix.length), "base64").toString("utf8"));
+if (!/^ipfs:\/\/b[a-z2-7]{20,}$/.test(uri)) throw new Error("Unexpected metadata URI");
+const response = await fetch("https://ipfs.io/ipfs/" + uri.slice(7));
+if (!response.ok) throw new Error("Metadata is unavailable from IPFS");
+const card = await response.json();
 const rarity = card.attributes.find(attribute => attribute.trait_type === "Rarity").value;
 return { owner, name: card.name, description: card.description, image: card.image, rarity };
 ~~~
@@ -215,7 +220,7 @@ Run the inspector with the values from **your** mint receipt:
 node workshop/exercises/inspect-token.mjs CONTRACT_ADDRESS TOKEN_ID
 ~~~
 
-Replace both placeholders. It reads the public chain and needs no wallet secret. If the public RPC is unavailable, set <code>WORKSHOP_RPC_URL</code> to another **chain-97** endpoint. Compare its owner, name, description, image URI and rarity with your recorded winner. If you transferred the NFT, <code>ownerOf</code> changes while <code>tokenURI</code> stays the same.
+Replace both placeholders. It reads the public chain and IPFS and needs no wallet secret. If the public RPC is unavailable, set <code>WORKSHOP_RPC_URL</code> to another **chain-97** endpoint. Compare its owner, name, description, image URI and rarity with your recorded winner. If you transferred the NFT, <code>ownerOf</code> changes while <code>tokenURI</code> stays the same. A public IPFS gateway can take time to retrieve a new CID; retry if the mint is confirmed but metadata is not available yet.
 
 ## 9. Final checks and hand-in
 
@@ -231,6 +236,7 @@ Run <code>npm test</code> and <code>npm run build</code>. The production build i
 | --- | --- |
 | A tier never appears | Only tiers represented in the finished deck participate. |
 | A card exceeds the limit | Shorten its metadata or use a permanent image URL; uploads become small embedded thumbnails. |
+| Metadata upload fails | Check <code>PINATA_JWT</code> in <code>.env.local</code>, restart the dev server, then retry. |
 | MetaMask is missing | Enable and unlock the extension in this browser profile, reload, then retry. |
 | Wrong network or no gas | Verify chain 97 and tBNB in the selected account. |
 | NFT is absent in MetaMask | Check the successful receipt, current account and chain; import by contract address and token ID. |
