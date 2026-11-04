@@ -47,7 +47,7 @@ await replace("contracts/Gacha.sol", "    function _mintCard(", "\n}", `    func
         // TODO 1: validate, remember and mint this win.
         revert("Complete _mintCard in the README");
     }`);
-await replace("web/cards.js", "export function cardMetadata(", "export function validateCard(", `export function cardMetadata(card) {
+await replace("web/cards.js", "export function cardMetadata(", "export function cardMetadataUri(", `export function cardMetadata(card) {
   // TODO 2: encode name, description, image and Rarity attribute as JSON.
   throw Error("Complete cardMetadata in the README");
 }
@@ -62,11 +62,11 @@ await replace("web/cards.js", "export function drawCard(", "\n}", `export functi
   throw Error("Complete drawCard in the README");
 `);
 await replace("web/wallet.js", "export async function switchNetwork(", "\n}", `export async function switchNetwork(wallet, target) {
-  // TODO 5: switch MetaMask to chain 97, adding the network if missing.
+  // TODO 5: switch MetaMask to chain 84532, adding the network if missing.
   throw Error("Complete switchNetwork in the README");
 `);
-await replace("web/main.js", "async function connect() {", "async function verifyMint(", `async function connect() {
-  // TODO 6: request MetaMask accounts, select chain 97, and return wallet + account.
+await replace("web/main.js", "async function connect() {", "async function disconnect() {", `async function connect() {
+  // TODO 6: request MetaMask accounts, select chain 84532, and show the connected account.
   throw Error("Complete connect in the README");
 }
 `);

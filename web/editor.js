@@ -1,7 +1,8 @@
 import { saveDeck, imageSrc, tierNames, validateCard } from "./cards.js";
+import { seedDeck } from "./seed-deck.js";
 
-const draftKey = "cryptita.creator.v1";
-const cards = [{ name: "", description: "", image: "", rarity: 0 }];
+const draftKey = "cryptita.creator.v2";
+const cards = seedDeck.map(card => ({...card}));
 let selected = 0;
 const $ = id => document.getElementById(id);
 

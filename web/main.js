@@ -1,14 +1,16 @@
-import { BrowserProvider, Contract, ContractFactory, getAddress, getCreateAddress, hexlify, randomBytes, toQuantity } from "ethers";
+import { BrowserProvider, Contract, ContractFactory, getAddress, getCreateAddress, hexlify, parseEther, randomBytes, toQuantity } from "ethers";
 import artifact from "../artifacts/Gacha.json";
-import { readDeck, cardMetadata, drawCard, imageSrc, tierNames } from "./cards.js";
-import { BSC_TESTNET, getMetaMask, switchNetwork, walletError } from "./wallet.js";
-import { initRoulette, revealRarity } from "./roulette.js";
+import { readDeck, cardMetadata, cardMetadataUri, drawCard } from "./cards.js";
+import { BASE_SEPOLIA, getMetaMask, switchNetwork, walletError } from "./wallet.js";
+import { initRoulette, resetRoulette, revealRarity } from "./roulette.js";
+import { needsReveal } from "./spin-state.js";
 import { showResultCard } from "./components/result-card.jsx";
 
-const STORE = "cryptita.player-win.v2";
-const minterKey = account => "cryptita.player-minter.v2.97." + account;
+const STORE = "cryptita.player-win.v3.84532";
+const minterKey = account => "cryptita.player-minter.v3.84532." + account;
+const SPIN_PRICE = parseEther("0.0001");
 const $ = id => document.getElementById(id);
-let deck = [], win, busy = false;
+let deck = [], win, busy = false, minting = false, connectedWallet, connectedAccount, observedWallet;
 
 function save(next) {
   try { localStorage.setItem(STORE, JSON.stringify(next)); }
@@ -17,37 +19,38 @@ function save(next) {
 }
 function restoreWin() {
   const current = localStorage.getItem(STORE);
-  if (current) return JSON.parse(current);
-  // Only carry forward card data from an unsubmitted win. Older contracts have a different ABI.
-  const old = JSON.parse(localStorage.getItem("cryptita.winning-card.v1"));
-  const card = old?.card;
-  if (!old?.receipt && !old?.attempt && card?.name && card.description && imageSrc(card.image) && tierNames[card.rarity]) {
-    const {name, description, image, rarity} = card;
-    save({id:hexlify(randomBytes(32)), card:{name, description, image, rarity}});
-  }
-  return win;
+  return current ? JSON.parse(current) : undefined;
+}
+function showSpinPrompt() {
+  if (!needsReveal(win) || $("spin-dialog").open) return;
+  $("spin-dialog").showModal();
+  $("spin-confirmed").focus();
 }
 function render() {
-  $("spin").hidden = !deck.length;
-  $("spin").disabled = busy || Boolean(win?.pending);
-  $("spin").textContent = win ? "Spin again" : "Spin the wheel";
+  $("spin-action").hidden = !deck.length && !needsReveal(win) && (!win || win.receipt);
+  $("spin-price").hidden = !!win?.pending || needsReveal(win);
+  $("spin").disabled = busy || (!connectedAccount && !needsReveal(win));
+  $("spin").textContent = needsReveal(win) ? "Spin" : win?.pending ? "Check transaction status" : win && !win.receipt ? "Retry payment" : win ? "Pay for next spin" : "Pay to spin";
+  $("spin-confirmed").disabled = !needsReveal(win);
+  $("deck-status").classList.toggle("confirming", minting);
+  $("connect-wallet").hidden = !!connectedAccount;
+  $("connect-wallet").disabled = busy;
+  $("wallet-address").hidden = !connectedAccount;
+  $("wallet-address").textContent = connectedAccount ? `${connectedAccount.slice(0, 6)}…${connectedAccount.slice(-4)}` : "";
+  $("wallet-address").title = connectedAccount || "";
+  $("wallet-address").setAttribute("aria-label", connectedAccount ? `Connected wallet: ${connectedAccount}` : "");
+  $("disconnect-wallet").hidden = !connectedAccount;
+  $("disconnect-wallet").disabled = busy;
   $("edit").textContent = deck.length ? "Edit collection" : "Create a collection";
   $("edit").className = deck.length ? "jump" : "button-link";
-  $("win-link").hidden = !win;
-  $("win").hidden = !win || Boolean(win?.receipt);
+  $("win-link").hidden = !win?.receipt || needsReveal(win) || busy;
   $("receipt").hidden = !win?.receipt;
-  $("action").hidden = Boolean(win?.receipt);
-  $("action").disabled = busy;
   $("import").disabled = busy;
   if (!win) return;
-  showResultCard(win.card);
-  $("win-note").textContent = win.receipt ? ""
-    : win.pending ? "Claim reserved for " + win.pending.account + " on BNB Smart Chain Testnet."
-    : "Saved in this browser. You can mint this card whenever you’re ready.";
-  $("action").textContent = win.pending ? "Check mint status" : "Mint this card with MetaMask";
   if (!win.receipt) return;
+  showResultCard(win.card);
   const r = win.receipt;
-  $("receipt-network").textContent = BSC_TESTNET.chainName + " (97)";
+  $("receipt-network").textContent = BASE_SEPOLIA.chainName + " (84532)";
   $("receipt-address").textContent = r.address;
   $("token").textContent = r.token;
   $("owner").textContent = r.owner;
@@ -55,37 +58,78 @@ function render() {
   $("tx").textContent = "Recovered from the contract";
   if (r.hash) {
     const link = document.createElement("a");
-    link.href = BSC_TESTNET.blockExplorerUrls[0] + "/tx/" + r.hash;
+    link.href = BASE_SEPOLIA.blockExplorerUrls[0] + "/tx/" + r.hash;
     link.textContent = r.hash; link.target = "_blank"; link.rel = "noopener noreferrer";
     $("tx").replaceChildren(link);
   }
 }
-async function run(task, area = "status") {
+async function run(task, area = "deck-status") {
   if (busy) return;
   busy = true; render();
   try { await task(); }
-  catch (error) { $(area).textContent = walletError(error, "tBNB"); }
+  catch (error) { $(area).textContent = walletError(error, "test ETH"); }
   finally { busy = false; render(); }
 }
 async function spin() {
-  if (win && !win.receipt && !window.confirm("Release " + win.card.name + " and spin for another card?")) return;
-  const id = hexlify(randomBytes(32));
-  const card = deck[drawCard(id, deck)];
-  save({id, card});
-  $("win").hidden = $("receipt").hidden = $("win-link").hidden = true;
-  $("status").textContent = $("import-status").textContent = "";
-  await revealRarity(card.rarity, card.name);
+  if (needsReveal(win)) {
+    if ($("spin-dialog").open) $("spin-dialog").close();
+    await revealRarity(win.card.rarity, win.card.name);
+    save({...win, revealed:true});
+    $("deck-status").textContent = "Spin complete. Your NFT is ready in your wallet.";
+    $("result-dialog").showModal();
+    return;
+  }
+  if (!win || win.receipt) {
+    const id = hexlify(randomBytes(32));
+    save({id, card:deck[drawCard(id, deck)], revealed:false});
+    $("import-status").textContent = "";
+    resetRoulette();
+    render();
+  }
+  minting = true;
+  $("deck-status").textContent = "Preparing wallet transaction…";
   render();
-  $("result-dialog").showModal();
+  try { await claim(); }
+  finally { minting = false; render(); }
 }
 async function connect() {
   const wallet = getMetaMask();
   await wallet.request({method:"eth_requestAccounts"});
-  await switchNetwork(wallet, 97);
-  if (Number(await wallet.request({method:"eth_chainId"})) !== 97) throw Error("Select BNB Smart Chain Testnet in MetaMask.");
+  await switchNetwork(wallet, 84532);
+  if (Number(await wallet.request({method:"eth_chainId"})) !== 84532) throw Error("Select Base Sepolia in MetaMask.");
   const [selected] = await wallet.request({method:"eth_accounts"});
   if (!selected) throw Error("Choose an account in MetaMask.");
-  return {wallet, account:getAddress(selected)};
+  connectedWallet = wallet;
+  connectedAccount = getAddress(selected);
+  if (observedWallet !== wallet) {
+    wallet.on?.("accountsChanged", accounts => {
+      if (connectedWallet !== wallet) return;
+      connectedAccount = accounts[0] ? getAddress(accounts[0]) : undefined;
+      if (!connectedAccount) connectedWallet = undefined;
+      render();
+    });
+    observedWallet = wallet;
+  }
+  render();
+}
+async function disconnect() {
+  await connectedWallet.request({method:"wallet_revokePermissions", params:[{eth_accounts:{}}]});
+  connectedWallet = undefined;
+  connectedAccount = undefined;
+  render();
+}
+async function currentWallet() {
+  if (!connectedWallet || !connectedAccount) throw Error("Connect your wallet before spinning.");
+  const wallet = connectedWallet;
+  const account = connectedAccount;
+  await switchNetwork(wallet, 84532);
+  const [selected] = await wallet.request({method:"eth_accounts"});
+  if (!selected || getAddress(selected) !== account) {
+    connectedWallet = undefined;
+    connectedAccount = undefined;
+    throw Error("Wallet account changed. Connect again before spinning.");
+  }
+  return {wallet, account};
 }
 async function verifyMint(provider, pending) {
   if (await provider.getCode(pending.address) === "0x") return false;
@@ -93,17 +137,22 @@ async function verifyMint(provider, pending) {
   const token = await nft.mintedToken(pending.account, win.id);
   if (!token) return false;
   const [owner, uri] = await Promise.all([nft.ownerOf(token), nft.tokenURI(token)]);
-  if (uri !== win.metadataUri) throw Error("The token URI differs from the uploaded winning card. Check the mint receipt.");
-  const response = await fetch(uri);
-  if (!response.ok) throw Error("The uploaded metadata is not available yet. Check mint status again shortly.");
-  const json = await response.text();
-  if (json !== cardMetadata(win.card)) throw Error("The token metadata differs from the winning card. Check the mint receipt.");
+  if (uri !== win.metadataUri) throw Error("The token URI differs from the winning card. Check the mint receipt.");
+  if (uri.startsWith("data:application/json;base64,")) {
+    if (uri !== cardMetadataUri(win.card)) throw Error("The token metadata differs from the winning card. Check the mint receipt.");
+  } else {
+    const response = await fetch(uri);
+    if (!response.ok) throw Error("The uploaded metadata is not available yet. Check transaction status again shortly.");
+    if (await response.text() !== cardMetadata(win.card)) throw Error("The token metadata differs from the winning card. Check the mint receipt.");
+  }
   // mintedToken is keyed by the original recipient. The token may have moved since minting.
   const receipt = {address:pending.address, token:String(token), owner, hash:pending.hash};
   localStorage.setItem(minterKey(pending.account), JSON.stringify({address:pending.address, winId:win.id}));
-  save({...win, pending:null, receipt});
-  $("status").textContent = "Mint confirmed. Use the receipt below to import your NFT.";
+  save({...win, pending:null, receipt, revealed:false});
+  $("deck-status").textContent = "Transaction complete. Click Spin to reveal your card.";
+  $("plate-title").textContent = "Ready to spin";
   render();
+  showSpinPrompt();
   return true;
 }
 async function prepare(provider, account) {
@@ -113,7 +162,7 @@ async function prepare(provider, account) {
     const nft = new Contract(known.address, artifact.abi, provider);
     const previousToken = await nft.mintedToken(account, known.winId);
     if (!previousToken) throw Error("Could not verify the saved minter for this account.");
-    if (!(await nft.tokenURI(previousToken)).startsWith("https://")) {
+    if (!(await nft.tokenURI(previousToken)).startsWith("data:application/json;base64,")) {
       return {account, address:getCreateAddress({from:account, nonce}), nonce, create:true};
     }
     return {account, address:known.address, nonce, create:false};
@@ -121,7 +170,7 @@ async function prepare(provider, account) {
   return {account, address:getCreateAddress({from:account, nonce}), nonce, create:true};
 }
 async function claim() {
-  const {wallet, account} = await connect();
+  const {wallet, account} = await currentWallet();
   if (win.pending && win.pending.account !== account) throw Error("Switch MetaMask back to " + win.pending.account + " to check this mint.");
   const provider = new BrowserProvider(wallet, undefined, {cacheTimeout:-1});
   try {
@@ -147,30 +196,24 @@ async function claim() {
         throw Error("The previous transaction was replaced. Your card is ready to mint again.");
       }
       if (await provider.getTransactionCount(account, "pending") > pending.nonce) {
-        $("status").textContent = "Transaction pending. Check again after confirmation in MetaMask."; return;
+        $("deck-status").textContent = "Transaction pending. Check again after confirmation in MetaMask."; return;
       }
       if (!window.confirm("No pending transaction is visible. Retry this same win using the original transaction nonce?")) return;
     }
     let metadataUri = win.metadataUri;
-    if (!metadataUri) {
-      $("status").textContent = "Uploading the winning card metadata to IPFS…";
-      const response = await fetch("/api/metadata", {
-        method:"POST", headers:{"Content-Type":"application/json"}, body:cardMetadata(win.card)
-      });
-      const result = await response.json();
-      if (!response.ok) throw Error(result.error || "Metadata upload failed.");
-      metadataUri = result.uri;
+    if (!metadataUri || (!previous && !metadataUri.startsWith("data:application/json;base64,"))) {
+      metadataUri = cardMetadataUri(win.card);
       save({...win, metadataUri});
     }
     const factory = new ContractFactory(artifact.abi, artifact.bytecode);
     const tx = pending.create ? await factory.getDeployTransaction(win.id, metadataUri)
       : {to:pending.address, data:factory.interface.encodeFunctionData("mint", [win.id, metadataUri])};
     save({...win, pending});
-    $("status").textContent = pending.create ? "Confirm your first mint and contract creation in MetaMask." : "Confirm your winning card in MetaMask.";
+    $("deck-status").textContent = pending.create ? "Confirm 0.0001 test ETH plus gas to create your collection and mint." : "Confirm 0.0001 test ETH plus gas to mint your card.";
     let hash;
     try {
       hash = await wallet.request({method:"eth_sendTransaction", params:[{
-        ...tx, from:account, chainId:"0x61", nonce:toQuantity(pending.nonce)
+        ...tx, from:account, chainId:BASE_SEPOLIA.chainId, nonce:toQuantity(pending.nonce), value:toQuantity(SPIN_PRICE)
       }]});
     } catch (error) {
       if (!previous && (Number(error.code) === 4001 || error.code === "ACTION_REJECTED" || error.code === "INSUFFICIENT_FUNDS" || /insufficient funds/i.test(error.message))) save({...win, pending:null});
@@ -178,7 +221,7 @@ async function claim() {
     }
     pending = {...pending, hash};
     save({...win, pending});
-    $("status").textContent = "Submitted. Waiting for BNB Smart Chain Testnet confirmation…";
+    $("deck-status").textContent = "Submitted. Waiting for Base Sepolia confirmation…";
     const receipt = await provider.waitForTransaction(hash, 1, 60000);
     if (!receipt || receipt.status !== 1) {
       if (receipt?.status === 0) save({...win, pending:null});
@@ -189,23 +232,31 @@ async function claim() {
       pending = {...pending, address:receipt.contractAddress};
       save({...win, pending});
     }
-    if (!await verifyMint(provider, pending)) throw Error("The mint is confirmed but token data is still loading. Check mint status.");
+    if (!await verifyMint(provider, pending)) throw Error("The mint is confirmed but token data is still loading. Check transaction status.");
   } finally { provider.destroy(); }
 }
-async function importNft() {
-  const {wallet, account} = await connect();
+async function offerImport(wallet, account) {
   const {address, token, owner} = win.receipt;
-  if (account !== owner) throw Error("Select the owner account " + owner + " in MetaMask to import this NFT.");
+  if (account !== owner) {
+    $("import-status").textContent = "The NFT has moved to " + owner + ". Import it in that wallet if needed.";
+    return;
+  }
   try {
     const added = await wallet.request({method:"wallet_watchAsset", params:{type:"ERC721", options:{address, tokenId:token}}});
-    $("import-status").textContent = added ? "MetaMask accepted the NFT import." : "Import manually with the contract address and token ID above.";
+    $("import-status").textContent = added ? "MetaMask accepted the display request." : "Import manually with the contract address and token ID above.";
   } catch (error) {
-    if (Number(error.code) === 4001) throw error;
-    $("import-status").textContent = "This MetaMask version could not add the NFT automatically. Use its NFT import form and the details above.";
+    $("import-status").textContent = Number(error.code) === 4001 ? "Display request declined. You can try again later." : "MetaMask could not show the NFT automatically. Use its NFT import form and the details above.";
   }
 }
-$("spin").onclick = () => run(spin, "deck-status");
-$("action").onclick = () => run(claim);
+async function importNft() {
+  const {wallet, account} = await currentWallet();
+  await offerImport(wallet, account);
+}
+$("connect-wallet").onclick = () => run(connect);
+$("disconnect-wallet").onclick = () => run(disconnect);
+$("spin").onclick = () => run(spin);
+$("spin-confirmed").onclick = () => run(spin);
+$("close-spin-dialog").onclick = () => $("spin-dialog").close();
 $("import").onclick = () => run(importNft, "import-status");
 $("win-link").onclick = () => $("result-dialog").showModal();
 $("close-result").onclick = () => $("result-dialog").close();
@@ -218,6 +269,12 @@ try {
   $("deck-status").textContent = deck.length ? deck.length + (deck.length === 1 ? " card in your deck" : " cards in your deck") : "Finish editing your first deck to unlock the wheel.";
   $("deck-summary").textContent = deck.length ? "Each spin draws from the rarities in your saved collection. Cards within a rarity share its chance equally." : "Add artwork, a name, a description and a rarity to each card. Finish editing when your collection is ready.";
   initRoulette(deck);
-  if (win) revealRarity(win.card.rarity, win.card.name, false);
+  if (needsReveal(win)) {
+    resetRoulette();
+    $("plate-title").textContent = "Ready to spin";
+    $("deck-status").textContent = "Transaction complete. Click Spin to reveal your card.";
+  } else if (win?.receipt) revealRarity(win.card.rarity, win.card.name, false);
+  else if (win) resetRoulette();
 } catch (error) { $("deck-status").textContent = error.message; }
 render();
+showSpinPrompt();

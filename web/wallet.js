@@ -1,9 +1,9 @@
-export const BSC_TESTNET = {
-  chainId: "0x61",
-  chainName: "BNB Smart Chain Testnet",
-  nativeCurrency: { name: "Test BNB", symbol: "tBNB", decimals: 18 },
-  rpcUrls: ["https://bsc-testnet-dataseed.bnbchain.org"],
-  blockExplorerUrls: ["https://testnet.bscscan.com"]
+export const BASE_SEPOLIA = {
+  chainId: "0x14a34",
+  chainName: "Base Sepolia",
+  nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+  rpcUrls: ["https://sepolia.base.org"],
+  blockExplorerUrls: ["https://sepolia.basescan.org"]
 };
 
 export function walletError(error, gasToken) {
@@ -42,8 +42,8 @@ export function getMetaMask() {
 }
 
 export async function switchNetwork(wallet, target) {
-  const config = BSC_TESTNET;
-  if (target !== 97) throw Error("This workshop only uses BNB Smart Chain Testnet.");
+  const config = BASE_SEPOLIA;
+  if (target !== 84532) throw Error("This workshop only uses Base Sepolia.");
   const current = await wallet.request({ method: "eth_chainId" });
   if (Number(current) === target) return;
   const switchChain = () => wallet.request({

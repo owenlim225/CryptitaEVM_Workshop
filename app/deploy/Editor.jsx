@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import Image from "next/image";
 
 export default function Editor() {
   useEffect(() => {
@@ -10,7 +11,7 @@ export default function Editor() {
   }, []);
 
   return <>
-    <header className="mast"><a className="brand" href="/">← Rarity Roulette</a><span>Collection studio</span></header>
+    <header className="mast"><a className="brand" href="/"><Image src="/cryptita-logo.png" alt="Cryptita Plays" width={280} height={83}/></a><span>Collection studio</span></header>
     <main className="studio">
       <h1>Create your collection</h1>
       <p>Give each card a title, a picture, details and a rarity. Your draft stays in this browser. Finish with one or more cards to play.</p>
@@ -31,7 +32,7 @@ export default function Editor() {
         </div>
       </fieldset>
       <p role="status" id="draft-status"/>
-      <section className="finish"><h2>Ready to play?</h2><p>Finish your collection to open the wheel. You can connect MetaMask after you win a card.</p><button id="finish" type="button">Finish collection &amp; spin</button></section>
+      <section className="finish"><h2>Ready to play?</h2><p>Finish your collection to open the wheel. Each spin uses MetaMask to pay 0.0001 Base Sepolia test ETH and mint your card.</p><button id="finish" type="button">Finish collection &amp; spin</button></section>
     </main>
   </>;
 }

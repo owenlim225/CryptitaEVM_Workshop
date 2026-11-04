@@ -21,7 +21,7 @@ contract PaidGachaDemo is ERC721URIStorage, Ownable, ReentrancyGuard {
     event Rolled(address indexed player, uint256 indexed tokenId, uint8 outcome);
 
     constructor() ERC721("Cryptita Gacha Demo", "GACHA") Ownable(msg.sender) {
-        if (block.chainid != 97) revert UnsupportedChain(block.chainid);
+        if (block.chainid != 84532) revert UnsupportedChain(block.chainid);
     }
 
     function roll(uint8 outcome) external payable nonReentrant returns (uint256 tokenId) {

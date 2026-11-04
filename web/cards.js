@@ -1,6 +1,8 @@
+import { seedDeck } from "./seed-deck.js";
+
 export const tierNames = ["N", "R", "SR", "SSR", "UR"];
 export const tierWeights = [55, 28, 12, 4, 1];
-const deckKey = "cryptita.finished-deck.v1";
+const deckKey = "cryptita.finished-deck.v2";
 
 export function imageSrc(uri) {
   if (typeof uri !== "string") return "";
@@ -18,6 +20,10 @@ export function cardMetadata(card) {
     name: card.name, description: card.description, image: card.image,
     attributes: [{ trait_type: "Rarity", value: tierNames[card.rarity] }]
   });
+}
+
+export function cardMetadataUri(card) {
+  return "data:application/json;base64," + btoa(String.fromCharCode(...new TextEncoder().encode(cardMetadata(card))));
 }
 
 export function validateCard(card, index) {
@@ -44,7 +50,7 @@ export function saveDeck(cards) {
 
 export function readDeck() {
   const saved = localStorage.getItem(deckKey);
-  return saved ? validateDeck(JSON.parse(saved)) : [];
+  return saved ? validateDeck(JSON.parse(saved)) : seedDeck.map(card => ({...card}));
 }
 
 export function availableWeights(cards) {
