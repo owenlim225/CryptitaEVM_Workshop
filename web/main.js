@@ -3,13 +3,14 @@ import artifact from "../artifacts/Gacha.json";
 import { readDeck, cardMetadata, cardMetadataUri, drawCard } from "./cards.js";
 import { BASE_SEPOLIA, getMetaMask, switchNetwork, walletError } from "./wallet.js";
 import { initRoulette, resetRoulette, revealRarity } from "./roulette.js";
+import { needsReveal } from "./spin-state.js";
 import { showResultCard } from "./components/result-card.jsx";
 
 const STORE = "cryptita.player-win.v3.84532";
 const minterKey = account => "cryptita.player-minter.v3.84532." + account;
 const SPIN_PRICE = parseEther("0.0001");
 const $ = id => document.getElementById(id);
-let deck = [], win, busy = false, connectedWallet, connectedAccount, observedWallet;
+let deck = [], win, busy = false, minting = false, connectedWallet, connectedAccount, observedWallet;
 
 function save(next) {
   try { localStorage.setItem(STORE, JSON.stringify(next)); }
@@ -20,20 +21,29 @@ function restoreWin() {
   const current = localStorage.getItem(STORE);
   return current ? JSON.parse(current) : undefined;
 }
+function showSpinPrompt() {
+  if (!needsReveal(win) || $("spin-dialog").open) return;
+  $("spin-dialog").showModal();
+  $("spin-confirmed").focus();
+}
 function render() {
-  $("spin-action").hidden = !deck.length;
-  $("spin-price").hidden = !!win?.pending;
-  $("spin").disabled = busy || !connectedAccount;
-  $("spin").textContent = win?.pending ? "Check spin status" : win && !win.receipt ? "Retry paid spin" : win ? "Spin again" : "Pay & spin";
+  $("spin-action").hidden = !deck.length && !needsReveal(win) && (!win || win.receipt);
+  $("spin-price").hidden = !!win?.pending || needsReveal(win);
+  $("spin").disabled = busy || (!connectedAccount && !needsReveal(win));
+  $("spin").textContent = needsReveal(win) ? "Spin" : win?.pending ? "Check transaction status" : win && !win.receipt ? "Retry payment" : win ? "Pay for next spin" : "Pay to spin";
+  $("spin-confirmed").disabled = !needsReveal(win);
+  $("deck-status").classList.toggle("confirming", minting);
   $("connect-wallet").hidden = !!connectedAccount;
   $("connect-wallet").disabled = busy;
   $("wallet-address").hidden = !connectedAccount;
-  $("wallet-address").textContent = connectedAccount || "";
+  $("wallet-address").textContent = connectedAccount ? `${connectedAccount.slice(0, 6)}…${connectedAccount.slice(-4)}` : "";
+  $("wallet-address").title = connectedAccount || "";
+  $("wallet-address").setAttribute("aria-label", connectedAccount ? `Connected wallet: ${connectedAccount}` : "");
   $("disconnect-wallet").hidden = !connectedAccount;
   $("disconnect-wallet").disabled = busy;
   $("edit").textContent = deck.length ? "Edit collection" : "Create a collection";
   $("edit").className = deck.length ? "jump" : "button-link";
-  $("win-link").hidden = !win?.receipt || busy;
+  $("win-link").hidden = !win?.receipt || needsReveal(win) || busy;
   $("receipt").hidden = !win?.receipt;
   $("import").disabled = busy;
   if (!win) return;
@@ -61,17 +71,26 @@ async function run(task, area = "deck-status") {
   finally { busy = false; render(); }
 }
 async function spin() {
-  let animation;
+  if (needsReveal(win)) {
+    if ($("spin-dialog").open) $("spin-dialog").close();
+    await revealRarity(win.card.rarity, win.card.name);
+    save({...win, revealed:true});
+    $("deck-status").textContent = "Spin complete. Your NFT is ready in your wallet.";
+    $("result-dialog").showModal();
+    return;
+  }
   if (!win || win.receipt) {
     const id = hexlify(randomBytes(32));
-    save({id, card:deck[drawCard(id, deck)]});
+    save({id, card:deck[drawCard(id, deck)], revealed:false});
     $("import-status").textContent = "";
     resetRoulette();
     render();
-    animation = revealRarity(win.card.rarity, win.card.name);
-    animation.catch(() => {});
   }
-  await claim(animation);
+  minting = true;
+  $("deck-status").textContent = "Preparing wallet transaction…";
+  render();
+  try { await claim(); }
+  finally { minting = false; render(); }
 }
 async function connect() {
   const wallet = getMetaMask();
@@ -123,21 +142,18 @@ async function verifyMint(provider, pending) {
     if (uri !== cardMetadataUri(win.card)) throw Error("The token metadata differs from the winning card. Check the mint receipt.");
   } else {
     const response = await fetch(uri);
-    if (!response.ok) throw Error("The uploaded metadata is not available yet. Check spin status again shortly.");
+    if (!response.ok) throw Error("The uploaded metadata is not available yet. Check transaction status again shortly.");
     if (await response.text() !== cardMetadata(win.card)) throw Error("The token metadata differs from the winning card. Check the mint receipt.");
   }
   // mintedToken is keyed by the original recipient. The token may have moved since minting.
   const receipt = {address:pending.address, token:String(token), owner, hash:pending.hash};
   localStorage.setItem(minterKey(pending.account), JSON.stringify({address:pending.address, winId:win.id}));
-  save({...win, pending:null, receipt});
-  $("deck-status").textContent = "Paid mint confirmed. Your wallet owns the NFT.";
+  save({...win, pending:null, receipt, revealed:false});
+  $("deck-status").textContent = "Transaction complete. Click Spin to reveal your card.";
+  $("plate-title").textContent = "Ready to spin";
   render();
+  showSpinPrompt();
   return true;
-}
-async function showMintedResult(animation) {
-  if (animation) await animation;
-  else await revealRarity(win.card.rarity, win.card.name);
-  $("result-dialog").showModal();
 }
 async function prepare(provider, account) {
   const nonce = await provider.getTransactionCount(account, "pending");
@@ -153,7 +169,7 @@ async function prepare(provider, account) {
   }
   return {account, address:getCreateAddress({from:account, nonce}), nonce, create:true};
 }
-async function claim(animation) {
+async function claim() {
   const {wallet, account} = await currentWallet();
   if (win.pending && win.pending.account !== account) throw Error("Switch MetaMask back to " + win.pending.account + " to check this mint.");
   const provider = new BrowserProvider(wallet, undefined, {cacheTimeout:-1});
@@ -167,7 +183,7 @@ async function claim(animation) {
         throw Error("The previous transaction reverted. Your card is saved and ready to retry.");
       }
       if (mined?.contractAddress) pending = {...pending, address:mined.contractAddress};
-      try { if (await verifyMint(provider, pending)) { await showMintedResult(animation); return; } }
+      try { if (await verifyMint(provider, pending)) return; }
       catch (error) {
         const unrelatedCreation = pending.create && !mined && ["BAD_DATA", "CALL_EXCEPTION"].includes(error.code);
         if (!unrelatedCreation) throw error;
@@ -216,8 +232,7 @@ async function claim(animation) {
       pending = {...pending, address:receipt.contractAddress};
       save({...win, pending});
     }
-    if (!await verifyMint(provider, pending)) throw Error("The mint is confirmed but token data is still loading. Check spin status.");
-    await showMintedResult(animation);
+    if (!await verifyMint(provider, pending)) throw Error("The mint is confirmed but token data is still loading. Check transaction status.");
   } finally { provider.destroy(); }
 }
 async function offerImport(wallet, account) {
@@ -228,9 +243,9 @@ async function offerImport(wallet, account) {
   }
   try {
     const added = await wallet.request({method:"wallet_watchAsset", params:{type:"ERC721", options:{address, tokenId:token}}});
-    $("import-status").textContent = added ? "MetaMask accepted the NFT import." : "Import manually with the contract address and token ID above.";
+    $("import-status").textContent = added ? "MetaMask accepted the display request." : "Import manually with the contract address and token ID above.";
   } catch (error) {
-    $("import-status").textContent = Number(error.code) === 4001 ? "NFT import declined. You can add it later with the details above." : "MetaMask could not add the NFT automatically. Use its NFT import form and the details above.";
+    $("import-status").textContent = Number(error.code) === 4001 ? "Display request declined. You can try again later." : "MetaMask could not show the NFT automatically. Use its NFT import form and the details above.";
   }
 }
 async function importNft() {
@@ -240,6 +255,8 @@ async function importNft() {
 $("connect-wallet").onclick = () => run(connect);
 $("disconnect-wallet").onclick = () => run(disconnect);
 $("spin").onclick = () => run(spin);
+$("spin-confirmed").onclick = () => run(spin);
+$("close-spin-dialog").onclick = () => $("spin-dialog").close();
 $("import").onclick = () => run(importNft, "import-status");
 $("win-link").onclick = () => $("result-dialog").showModal();
 $("close-result").onclick = () => $("result-dialog").close();
@@ -252,7 +269,12 @@ try {
   $("deck-status").textContent = deck.length ? deck.length + (deck.length === 1 ? " card in your deck" : " cards in your deck") : "Finish editing your first deck to unlock the wheel.";
   $("deck-summary").textContent = deck.length ? "Each spin draws from the rarities in your saved collection. Cards within a rarity share its chance equally." : "Add artwork, a name, a description and a rarity to each card. Finish editing when your collection is ready.";
   initRoulette(deck);
-  if (win?.receipt) revealRarity(win.card.rarity, win.card.name, false);
+  if (needsReveal(win)) {
+    resetRoulette();
+    $("plate-title").textContent = "Ready to spin";
+    $("deck-status").textContent = "Transaction complete. Click Spin to reveal your card.";
+  } else if (win?.receipt) revealRarity(win.card.rarity, win.card.name, false);
   else if (win) resetRoulette();
 } catch (error) { $("deck-status").textContent = error.message; }
 render();
+showSpinPrompt();

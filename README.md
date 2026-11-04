@@ -181,7 +181,7 @@ async function connect() {
 }
 ~~~
 
-Trace the supplied <code>spin</code> and <code>claim</code> functions in that same file. Connect the wallet in the header before spinning. They select a card, start the wheel, encode its JSON into a data URI, save the URI, and prepare a 0.0001 test ETH transaction. The first transaction deploys the contract and mints the NFT; later spins call <code>mint</code> on the saved contract. After confirmation, the app verifies <code>mintedToken</code>, <code>ownerOf</code> and <code>tokenURI</code> against the winning card, then opens the result modal. The modal has a button to add the NFT to MetaMask if you choose. The pending transaction code lets the user return after an interrupted confirmation without paying twice for the same spin.
+Trace the supplied <code>spin</code> and <code>claim</code> functions in that same file. Connect the wallet in the header before spinning. They select a card, encode its JSON into a data URI, save the URI, and prepare a 0.0001 test ETH transaction. The first transaction deploys the contract and mints the NFT; later payments call <code>mint</code> on the saved contract. After confirmation, the app verifies <code>mintedToken</code>, <code>ownerOf</code> and <code>tokenURI</code> against the winning card. Choose **Spin** to reveal the card and open the result modal. The NFT is already in the receiving wallet; the modal offers a display option only if MetaMask does not show it. The pending transaction code lets the user return after an interrupted confirmation without paying twice for the same spin.
 
 Run <code>npm test</code>. All student-project tests should pass before you try a public testnet mint.
 
@@ -190,20 +190,20 @@ Run <code>npm test</code>. All student-project tests should pass before you try 
 1. In <code>contracts/Gacha.sol</code>, change <code>ERC721("Cryptita Gacha", "GACHA")</code> to your collection name and a short symbol. Keep the constructor arguments and chain guard.
 2. In <code>app/layout.jsx</code>, change the site title and description. In <code>app/page.jsx</code>, change the visible heading and introduction. In <code>app/deploy/Editor.jsx</code>, change the collection instructions if your theme needs them. The supplied <code>web/style.css</code> and <code>web/editor.css</code> are your styling starting point.
 3. Run <code>npm test</code>, then <code>npm run dev</code>. Open [http://localhost:5173](http://localhost:5173). The editor is at <code>/deploy</code>.
-4. Create a card with your own title, description, rarity and photo. Use an HTTPS or <code>ipfs://</code> image URL, or upload a JPG/PNG/WebP thumbnail. Add at least one more card in a different rarity. Save each card, choose **Finish collection & spin**, connect MetaMask in the header, then choose **Pay & spin**. Record the winning name, rarity, image URI and description from the result.
+4. Create a card with your own title, description, rarity and photo. Use an HTTPS or <code>ipfs://</code> image URL, or upload a JPG/PNG/WebP thumbnail. Add at least one more card in a different rarity. Save each card, choose **Finish collection & spin**, connect MetaMask in the header, then choose **Pay to spin**. When the transaction completes, choose **Spin** in the popup and record the winning name, rarity, image URI and description from the result.
 
 **Checkpoint:** you can build the collection without MetaMask. The paid spin needs MetaMask and Base Sepolia test ETH for the fee plus on-chain metadata gas. The collection and current transaction are saved in this browser and local origin. Do not switch browsers or local ports while a mint is pending.
 
 ## 7. Pay, mint, then reveal on Base Sepolia
 
 1. Unlock MetaMask. Check the selected test account, chain ID **84532**, and its Base Sepolia test ETH balance.
-2. Choose **Connect wallet** in the header, approve the account and network prompts, then choose **Pay & spin** or **Spin again**. The wheel starts while the app prepares the wallet transaction; the selected card's metadata is encoded before payment.
-3. Review the wallet transaction: **0.0001 test ETH plus gas**. The first spin also creates your contract. Confirm it and wait for verification; if you reject it, use **Retry paid spin** for the same selected card.
-4. After the mint is confirmed and verified, the result dialog opens. Record the contract address, token ID, receiving account and transaction hash. Open it on [Base Sepolia BaseScan](https://sepolia.basescan.org/) and check that it succeeded. The ERC-721 <code>Transfer</code> event should have the zero address as sender and your account as recipient.
-5. Choose **Add NFT to MetaMask** in the result dialog if you want to import it. If MetaMask does not import it, open its **NFTs → Import NFT** screen and enter the **contract address and token ID** on Base Sepolia. The transaction hash is not the NFT address. See [MetaMask's NFT import guide](https://support.metamask.io/nfts/nft-tokens-in-your-metamask-wallet/).
-6. Choose **Spin again** and confirm another paid mint. The second receipt should use the **same contract address** and a new token ID. The app reuses a contract per account in the same browser.
+2. Choose **Connect MetaMask** in the header, approve the account and network prompts, then choose **Pay to spin** or **Pay for next spin**. The selected card's metadata is encoded into the transaction before payment; the wheel stays still.
+3. Review the wallet transaction: **0.0001 test ETH plus gas**. The first payment also creates your contract. Confirm it and wait for verification; the page shows a spinner during the wallet and chain wait. If you reject it, use **Retry payment** for the same selected card.
+4. When the **Transaction complete** popup appears, choose its **Spin** button to reveal the card and open the result dialog. If you close the popup, the page's **Spin** button remains available. Record the contract address, token ID, receiving account and transaction hash. Open it on [Base Sepolia BaseScan](https://sepolia.basescan.org/) and check that it succeeded. The ERC-721 <code>Transfer</code> event should have the zero address as sender and your account as recipient.
+5. The confirmed mint already credits the NFT to the receiving wallet. If it does not appear in MetaMask, open **NFT not showing in MetaMask?** in the result dialog and choose **Show NFT in MetaMask**. If that fails, open MetaMask’s **NFTs → Import NFT** screen and enter the **contract address and token ID** on Base Sepolia. The transaction hash is not the NFT address. See [MetaMask's NFT import guide](https://support.metamask.io/manage-crypto/nfts/nft-tokens-in-your-metamask-wallet/).
+6. Choose **Pay for next spin** and confirm another paid mint, then choose **Spin** again. The second receipt should use the **same contract address** and a new token ID. The app reuses a contract per account in the same browser.
 
-If a request stalls, check MetaMask activity and the transaction on BaseScan before retrying. The app keeps a pending win and checks the chain for its token when you choose **Check spin status**.
+If a request stalls, check MetaMask activity and the transaction on BaseScan before retrying. The app keeps a pending win and checks the chain for its token when you choose **Check transaction status**.
 
 ## 8. Read the NFT independently
 
@@ -245,6 +245,6 @@ Run <code>npm test</code> and <code>npm run build</code>. The production build i
 | MetaMask is missing | Enable and unlock the extension in this browser profile, reload, then retry. |
 | Wrong network or no gas | Verify chain 84532 and enough Base Sepolia test ETH for the fee plus gas. |
 | NFT is absent in MetaMask | Check the successful receipt, current account and chain; import by contract address and token ID. |
-| A mint confirmation was interrupted | Check wallet activity and the explorer, then use **Check spin status**. |
+| A mint confirmation was interrupted | Check wallet activity and the explorer, then use **Check transaction status**. |
 
 For class timing and teaching notes, see the [participant guide](workshop/PARTICIPANT.md) and [facilitator guide](workshop/FACILITATOR.md). Maintainers can use the [implementation plan](IMPLEMENTATION_PLAN.md).
