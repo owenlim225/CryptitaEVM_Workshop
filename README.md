@@ -18,8 +18,13 @@ Cards and draws are local. Before the wallet transaction, the browser selects a 
 
 ## 1. Prepare your computer and wallet
 
-1. Install [Node.js](https://nodejs.org/en/download) 22.12 or later, Git, VS Code, and the [MetaMask browser extension](https://metamask.io/download/). Use a **dedicated test account**.
-2. Open a terminal. Clone this repository and enter it:
+1. Install [Node.js](https://nodejs.org/en/download) 22.12 or later, Git, VS Code, and the [MetaMask browser extension](https://metamask.io/download/).
+2. Open the extension and choose **Create a new wallet** for this workshop. Follow MetaMask's setup prompts and use a **dedicated test wallet**. If you choose the Secret Recovery Phrase setup, write its **12 words** in the exact order and keep them somewhere private and offline. Anyone with those words can control the wallet; MetaMask cannot recover them for you. **Never show the phrase to a facilitator, enter it in this project or a QR site, or put it in a screenshot.** See [MetaMask's wallet setup guide](https://support.metamask.io/start/creating-a-new-wallet).
+3. In MetaMask, select the workshop account and click its **public EVM wallet address** to copy it. Check that the pasted address starts with <code>0x</code> and matches the first and last characters shown in MetaMask. Open [QR Code Generator](https://www.qr-code-generator.com/), choose a **static Text** QR code, and paste **only that public address**. Generate the code and let a live facilitator scan it to send Base Sepolia test ETH. Have them confirm the scanned address matches the one in MetaMask. The QR code shares your receiving address, never your recovery phrase or private key. See [MetaMask's address guide](https://support.metamask.io/configure/accounts/how-to-view-your-account-details-and-public-address/) and the [static QR code guide](https://support.qr-code-generator.com/hc/en-us/articles/7664248839053-How-can-I-create-a-Static-QR-Code-without-an-account).
+4. Add **Base Sepolia** in MetaMask: open **Networks → Manage networks → Add a custom network → Add from Chainlist**, search for **Base Sepolia**, then approve the request and choose **Save** if prompted. If your MetaMask version does not show **Add from Chainlist**, follow [MetaMask's Chainlist instructions](https://support.metamask.io/configure/networks/how-to-add-a-custom-network-rpc) or add it manually. Before approving, verify the network against [Base's network details](https://docs.base.org/get-started/connect-to-base): RPC <code>https://sepolia.base.org</code>, chain ID <code>84532</code>, currency symbol <code>ETH</code>, explorer <code>https://sepolia.basescan.org</code>. Choose **Base Sepolia**, not Base mainnet (chain 8453). The app can also ask MetaMask to add or switch to Base Sepolia.
+5. On MetaMask's **Tokens** tab, open the **Enabled networks** or selected network filter and choose **Base Sepolia** so the displayed balance is for this testnet. If prompted, enable **Show test networks** in the Networks menu first. This filter controls what balances you see; when you connect the workshop app later, also approve **Base Sepolia** as the app's network. See [MetaMask's network filter guide](https://support.metamask.io/configure/networks/how-to-change-networks).
+6. Ask your facilitator to send test ETH to the QR code address, or use a [Base testnet faucet](https://docs.base.org/get-started/get-funds). Confirm that the **same account** shows the deposit on **Base Sepolia** before spinning. Each spin needs 0.0001 test ETH plus gas; contract creation needs more gas than a later mint. Do not move real ETH to the test wallet for this lab.
+7. Open a terminal. Clone this repository and enter it:
 
    ~~~sh
    git clone https://github.com/owenlim225/CryptitaEVM_Workshop.git
@@ -27,9 +32,7 @@ Cards and draws are local. Before the wallet transaction, the browser selects a 
    npm ci
    ~~~
 
-3. If PowerShell blocks the npm shim, use <code>npm.cmd ci</code> and <code>npm.cmd run dev</code> in place of the corresponding commands.
-4. In MetaMask, choose your test account. Add **Base Sepolia** if it is missing: RPC <code>https://sepolia.base.org</code>, chain ID <code>84532</code>, currency symbol <code>ETH</code>, explorer <code>https://sepolia.basescan.org</code>. The app can also ask MetaMask to add or switch to this network. Check the chain ID before signing. See [Base's network details](https://docs.base.org/get-started/connect-to-base).
-5. Get Base Sepolia test ETH from a [Base testnet faucet](https://docs.base.org/get-started/get-funds) or your facilitator. Each spin needs 0.0001 test ETH plus gas; contract creation needs more gas than a later mint. Do not move real ETH to the test account for this lab.
+8. If PowerShell blocks the npm shim, use <code>npm.cmd ci</code> and <code>npm.cmd run dev</code> in place of the corresponding commands.
 
 **No private key or recovery phrase goes into this project.** MetaMask signs transactions in the browser. An image can still use an HTTPS or <code>ipfs://</code> URL; a local thumbnail becomes part of the on-chain JSON URI.
 
