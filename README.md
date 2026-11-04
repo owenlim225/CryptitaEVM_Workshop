@@ -55,14 +55,14 @@ Cards and draws are local. Before the wallet transaction, the browser selects a 
    ~~~
 
    Choose another folder name if <code>my-gacha</code> already exists. The generator refuses to overwrite an existing folder. You now edit files in <code>my-gacha</code>, not the reference checkout. The new project's <code>README.md</code> is this guide. The initial tests are expected to fail until you complete the TODOs.
-4. In <code>my-gacha</code>, create <code>.env.local</code> with your Pinata values:
+4. In <code>my-gacha</code>, copy <code>.env.example</code> to <code>.env.local</code> and replace both placeholders with your Pinata values:
 
    ~~~text
    PINATA_JWT=your-jwt
-   PINATA_GATEWAY_URL=https://ivory-additional-snail-831.mypinata.cloud
+   PINATA_GATEWAY_URL=https://your-gateway.mypinata.cloud
    ~~~
 
-   The gateway above is the main example; replace it with your own Pinata gateway. Keep the JWT private; <code>.env.local</code> is ignored by Git. Restart the dev server after adding it. The server uploads winning-card JSON to public IPFS before the mint transaction is submitted. The upload endpoint is intended for this local workshop; add authentication and rate limits before deploying it publicly.
+   Keep the JWT private; <code>.env.local</code> is ignored by Git. Restart the dev server after adding it. The app checks this setup before drawing a card. The server uploads winning-card JSON to public IPFS before the mint transaction is submitted. The upload endpoint is intended for this local workshop; add authentication and rate limits before deploying it publicly.
 
 ## 3. Implement the Solidity NFT
 
@@ -175,27 +175,38 @@ async function connect() {
     throw Error("Select Base Sepolia in MetaMask.");
   const [selected] = await wallet.request({ method: "eth_accounts" });
   if (!selected) throw Error("Choose an account in MetaMask.");
-  return { wallet, account: getAddress(selected) };
+  connectedWallet = wallet;
+  connectedAccount = getAddress(selected);
+  if (observedWallet !== wallet) {
+    wallet.on?.("accountsChanged", accounts => {
+      if (connectedWallet !== wallet) return;
+      connectedAccount = accounts[0] ? getAddress(accounts[0]) : undefined;
+      if (!connectedAccount) connectedWallet = undefined;
+      render();
+    });
+    observedWallet = wallet;
+  }
+  render();
 }
 ~~~
 
-Trace the supplied <code>spin</code> and <code>claim</code> functions in that same file. They select a hidden card, upload its JSON to Pinata, save the URI, and prepare a 0.0001 test ETH transaction. The first transaction deploys the contract and mints the NFT; later spins call <code>mint</code> on the saved contract. After confirmation, the app verifies <code>mintedToken</code>, <code>ownerOf</code>, <code>tokenURI</code> and the fetched JSON, offers to add the NFT in MetaMask, and then opens the result modal. The pending transaction code lets the user return after an interrupted confirmation without paying twice for the same spin.
+Trace the supplied <code>spin</code> and <code>claim</code> functions in that same file. Connect the wallet in the header before spinning. They select a hidden card, upload its JSON to Pinata, save the URI, and prepare a 0.0001 test ETH transaction. The first transaction deploys the contract and mints the NFT; later spins call <code>mint</code> on the saved contract. After confirmation, the app verifies <code>mintedToken</code>, <code>ownerOf</code>, <code>tokenURI</code> and the fetched JSON, offers to add the NFT in MetaMask, and then opens the result modal. The pending transaction code lets the user return after an interrupted confirmation without paying twice for the same spin.
 
-Run <code>npm test</code>. All twelve student-project tests should pass before you try a public testnet mint.
+Run <code>npm test</code>. All thirteen student-project tests should pass before you try a public testnet mint.
 
 ## 6. Make the app yours and run it
 
 1. In <code>contracts/Gacha.sol</code>, change <code>ERC721("Cryptita Gacha", "GACHA")</code> to your collection name and a short symbol. Keep the constructor arguments and chain guard.
 2. In <code>app/layout.jsx</code>, change the site title and description. In <code>app/page.jsx</code>, change the visible heading and introduction. In <code>app/deploy/Editor.jsx</code>, change the collection instructions if your theme needs them. The supplied <code>web/style.css</code> and <code>web/editor.css</code> are your styling starting point.
 3. Run <code>npm test</code>, then <code>npm run dev</code>. Open [http://localhost:5173](http://localhost:5173). The editor is at <code>/deploy</code>.
-4. Create a card with your own title, description, rarity and photo. Use an HTTPS or <code>ipfs://</code> image URL, or upload a JPG/PNG/WebP thumbnail. Add at least one more card in a different rarity. Save each card, choose **Finish collection & spin**, then choose **Pay & spin** with MetaMask. Record the winning name, rarity, image URI and description from the result.
+4. Create a card with your own title, description, rarity and photo. Use an HTTPS or <code>ipfs://</code> image URL, or upload a JPG/PNG/WebP thumbnail. Add at least one more card in a different rarity. Save each card, choose **Finish collection & spin**, connect MetaMask in the header, then choose **Pay & spin**. Record the winning name, rarity, image URI and description from the result.
 
 **Checkpoint:** you can build the collection without MetaMask. The paid spin needs MetaMask, Pinata, and Base Sepolia test ETH. The collection and current transaction are saved in this browser and local origin. Do not switch browsers or local ports while a mint is pending.
 
 ## 7. Pay, mint, then reveal on Base Sepolia
 
 1. Unlock MetaMask. Check the selected test account, chain ID **84532**, and its Base Sepolia test ETH balance.
-2. Choose **Pay & spin** or **Spin again**. Approve the account and network prompts if shown. The app prepares the selected card's metadata on public IPFS before asking for payment.
+2. Choose **Connect wallet** in the header, approve the account and network prompts, then choose **Pay & spin** or **Spin again**. The app checks Pinata setup and prepares the selected card's metadata on public IPFS before asking for payment.
 3. Review the wallet transaction: **0.0001 test ETH plus gas**. The first spin also creates your contract. Confirm it and wait for verification; if you reject it, use **Retry paid spin** for the same hidden card.
 4. The app verifies the minted NFT and asks MetaMask to add it. The result dialog then opens. Record the contract address, token ID, receiving account and transaction hash. Open it on [Base Sepolia BaseScan](https://sepolia.basescan.org/) and check that it succeeded. The ERC-721 <code>Transfer</code> event should have the zero address as sender and your account as recipient.
 5. If your MetaMask version does not import the NFT automatically, open its **NFTs → Import NFT** screen and enter the **contract address and token ID** on Base Sepolia. The transaction hash is not the NFT address. See [MetaMask's NFT import guide](https://support.metamask.io/nfts/nft-tokens-in-your-metamask-wallet/).

@@ -7,6 +7,10 @@ body, figure, h1, h2, p, dl, dd { margin:0; }
 .mast, main { width:min(100% - 3rem, 66rem); margin:auto; }
 .mast { border-bottom:2px solid var(--ink); display:flex; justify-content:space-between; align-items:center; padding:1.1rem 0; gap:1rem; }
 .mast span { text-align:right; font-size:.85rem; }
+.mast-right { display:flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:.5rem 1rem; }
+.wallet-controls { display:flex; align-items:center; flex-wrap:wrap; justify-content:flex-end; gap:.5rem; }
+.wallet-controls button { min-height:36px; padding:.35rem .65rem; font-size:.8rem; }
+#wallet-address { font: .8rem ui-monospace,monospace; overflow-wrap:anywhere; }
 a { color:var(--blue); text-underline-offset:3px; }
 .brand { display:inline-flex; align-items:center; gap:.5rem; color:var(--ink); text-decoration:none; font-size:1.36rem; font-weight:760; letter-spacing:-.035em; }
 .press { display:grid; grid-template-columns:1fr .84fr; gap:clamp(2rem,8vw,7rem); align-items:center; padding:3rem 0; }
@@ -69,7 +73,7 @@ footer { padding:1rem 0 2rem; border-top:1px solid var(--line); font-size:.82rem
   h1 i::before { content:' '; }
   h1 { font-size:3.5rem; }
   .bench { grid-template-columns:1fr; gap:1.75rem; padding:1.5rem 0; }
-  .mast span { max-width:15ch; }
+  .mast-right { max-width:70%; }
   .wheel-housing svg { width:min(100%,15rem); }
 }
 #win-link { margin:.4rem 0 0; width:fit-content; font-size:.88rem; }

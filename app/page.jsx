@@ -13,7 +13,7 @@ export default function Page() {
   return <>
     <header className="mast">
       <a className="brand" href="/" aria-label="Cryptita home"><svg aria-hidden="true" width="27" height="26" viewBox="0 0 27 26"><path fill="currentColor" d="M0 13 8 0h9L9 13l8 13H8zm12 0 8-13h7l-8 13 8 13h-7z"/></svg>Cryptita</a>
-      <span>Base Sepolia builder workshop</span>
+      <div className="mast-right"><span>Base Sepolia builder workshop</span><div className="wallet-controls"><button id="connect-wallet" type="button" className="minor">Connect wallet</button><span id="wallet-address" hidden/><button id="disconnect-wallet" type="button" className="minor" hidden>Disconnect wallet</button></div></div>
     </header>
     <main>
       <section className="press" aria-labelledby="title">

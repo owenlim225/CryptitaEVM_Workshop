@@ -19,7 +19,7 @@ try {
 await mkdir(target, { recursive: true });
 for (const item of [
   "app", "contracts", "scripts", "test", "web", "package.json", "package-lock.json",
-  "hardhat.config.cjs", "next.config.mjs", ".gitignore", "AGENTS.md", "README.md",
+  "hardhat.config.cjs", "next.config.mjs", ".gitignore", ".env.example", "AGENTS.md", "README.md",
   "IMPLEMENTATION_PLAN.md"
 ]) {
   await cp(join(root, item), join(target, item), { recursive: true });
@@ -65,8 +65,8 @@ await replace("web/wallet.js", "export async function switchNetwork(", "\n}", `e
   // TODO 5: switch MetaMask to chain 84532, adding the network if missing.
   throw Error("Complete switchNetwork in the README");
 `);
-await replace("web/main.js", "async function connect() {", "async function verifyMint(", `async function connect() {
-  // TODO 6: request MetaMask accounts, select chain 84532, and return wallet + account.
+await replace("web/main.js", "async function connect() {", "async function disconnect() {", `async function connect() {
+  // TODO 6: request MetaMask accounts, select chain 84532, and show the connected account.
   throw Error("Complete connect in the README");
 }
 `);

@@ -7,7 +7,7 @@ Follow the numbered instructions in the [README](../README.md). This page is you
 | 00:00–00:20 | README §§1–2: install, wallet, Pinata key, inspect finished target, generate starter | Separate project folder, dedicated MetaMask test account, chain 84532 |
 | 00:20–00:50 | §3: implement the ERC-721 mint with URI storage | Contract tests pass; identify ABI and bytecode |
 | 00:50–01:20 | §4: encode card JSON and weighted draw | Card/roulette tests pass; explain SSR:UR = 4:1 |
-| 01:20–01:45 | §5: network switching and wallet connection | Twelve automated tests pass |
+| 01:20–01:45 | §5: network switching and wallet connection | Thirteen automated tests pass |
 | 01:45–01:55 | Break | Keep your project and browser profile open |
 | 01:55–02:15 | §6: name your app and collection, create cards | Saved deck ready for a paid spin |
 | 02:15–02:40 | §7: paid spin and MetaMask mint on Base Sepolia | Revealed result, receipt, contract address, token ID, account |

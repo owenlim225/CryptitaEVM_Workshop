@@ -9,7 +9,7 @@ const STORE = "cryptita.player-win.v3.84532";
 const minterKey = account => "cryptita.player-minter.v3.84532." + account;
 const SPIN_PRICE = parseEther("0.0001");
 const $ = id => document.getElementById(id);
-let deck = [], win, busy = false;
+let deck = [], win, busy = false, connectedWallet, connectedAccount, observedWallet;
 
 function save(next) {
   try { localStorage.setItem(STORE, JSON.stringify(next)); }
@@ -22,8 +22,14 @@ function restoreWin() {
 }
 function render() {
   $("spin").hidden = !deck.length;
-  $("spin").disabled = busy;
+  $("spin").disabled = busy || !connectedAccount;
   $("spin").textContent = win?.pending ? "Check spin status" : win && !win.receipt ? "Retry paid spin" : win ? "Spin again · 0.0001 ETH" : "Pay & spin · 0.0001 ETH";
+  $("connect-wallet").hidden = !!connectedAccount;
+  $("connect-wallet").disabled = busy;
+  $("wallet-address").hidden = !connectedAccount;
+  $("wallet-address").textContent = connectedAccount || "";
+  $("disconnect-wallet").hidden = !connectedAccount;
+  $("disconnect-wallet").disabled = busy;
   $("edit").textContent = deck.length ? "Edit collection" : "Create a collection";
   $("edit").className = deck.length ? "jump" : "button-link";
   $("win-link").hidden = !win?.receipt;
@@ -54,6 +60,11 @@ async function run(task, area = "deck-status") {
   finally { busy = false; render(); }
 }
 async function spin() {
+  await currentWallet();
+  if (!win || win.receipt || !win.metadataUri) {
+    const response = await fetch("/api/metadata");
+    if (!response.ok) throw Error((await response.json()).error || "Pinata setup is unavailable.");
+  }
   if (!win || win.receipt) {
     const id = hexlify(randomBytes(32));
     save({id, card:deck[drawCard(id, deck)]});
@@ -70,7 +81,37 @@ async function connect() {
   if (Number(await wallet.request({method:"eth_chainId"})) !== 84532) throw Error("Select Base Sepolia in MetaMask.");
   const [selected] = await wallet.request({method:"eth_accounts"});
   if (!selected) throw Error("Choose an account in MetaMask.");
-  return {wallet, account:getAddress(selected)};
+  connectedWallet = wallet;
+  connectedAccount = getAddress(selected);
+  if (observedWallet !== wallet) {
+    wallet.on?.("accountsChanged", accounts => {
+      if (connectedWallet !== wallet) return;
+      connectedAccount = accounts[0] ? getAddress(accounts[0]) : undefined;
+      if (!connectedAccount) connectedWallet = undefined;
+      render();
+    });
+    observedWallet = wallet;
+  }
+  render();
+}
+async function disconnect() {
+  await connectedWallet.request({method:"wallet_revokePermissions", params:[{eth_accounts:{}}]});
+  connectedWallet = undefined;
+  connectedAccount = undefined;
+  render();
+}
+async function currentWallet() {
+  if (!connectedWallet || !connectedAccount) throw Error("Connect your wallet before spinning.");
+  const wallet = connectedWallet;
+  const account = connectedAccount;
+  await switchNetwork(wallet, 84532);
+  const [selected] = await wallet.request({method:"eth_accounts"});
+  if (!selected || getAddress(selected) !== account) {
+    connectedWallet = undefined;
+    connectedAccount = undefined;
+    throw Error("Wallet account changed. Connect again before spinning.");
+  }
+  return {wallet, account};
 }
 async function verifyMint(provider, pending) {
   if (await provider.getCode(pending.address) === "0x") return false;
@@ -111,7 +152,7 @@ async function prepare(provider, account) {
   return {account, address:getCreateAddress({from:account, nonce}), nonce, create:true};
 }
 async function claim() {
-  const {wallet, account} = await connect();
+  const {wallet, account} = await currentWallet();
   if (win.pending && win.pending.account !== account) throw Error("Switch MetaMask back to " + win.pending.account + " to check this mint.");
   const provider = new BrowserProvider(wallet, undefined, {cacheTimeout:-1});
   try {
@@ -197,9 +238,11 @@ async function offerImport(wallet, account) {
   }
 }
 async function importNft() {
-  const {wallet, account} = await connect();
+  const {wallet, account} = await currentWallet();
   await offerImport(wallet, account);
 }
+$("connect-wallet").onclick = () => run(connect);
+$("disconnect-wallet").onclick = () => run(disconnect);
 $("spin").onclick = () => run(spin);
 $("import").onclick = () => run(importNft, "import-status");
 $("win-link").onclick = () => $("result-dialog").showModal();

@@ -1,9 +1,20 @@
-export async function POST(request) {
-  if (!process.env.PINATA_JWT) return Response.json({error:"Set PINATA_JWT in .env.local before minting."}, {status:503});
+function configError() {
+  if (!process.env.PINATA_JWT || process.env.PINATA_JWT === "replace-with-your-pinata-jwt") return "Set PINATA_JWT in .env.local before minting. Restart the dev server after saving it.";
   const gateway = process.env.PINATA_GATEWAY_URL;
-  if (!/^https:\/\/[a-z0-9-]+\.mypinata\.cloud\/?$/.test(gateway ?? "")) {
-    return Response.json({error:"Set PINATA_GATEWAY_URL to your Pinata HTTPS gateway in .env.local."}, {status:503});
+  if (gateway === "https://replace-with-your-gateway.mypinata.cloud" || !/^https:\/\/[a-z0-9-]+\.mypinata\.cloud\/?$/.test(gateway ?? "")) {
+    return "Set PINATA_GATEWAY_URL to your Pinata HTTPS gateway in .env.local. Restart the dev server after saving it.";
   }
+}
+
+export function GET() {
+  const error = configError();
+  return error ? Response.json({error}, {status:503}) : Response.json({ready:true});
+}
+
+export async function POST(request) {
+  const error = configError();
+  if (error) return Response.json({error}, {status:503});
+  const gateway = process.env.PINATA_GATEWAY_URL;
   if (Number(request.headers.get("content-length")) > 8192) return Response.json({error:"Metadata exceeds 8 KiB."}, {status:413});
 
   const json = await request.text();
