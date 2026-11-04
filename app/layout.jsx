@@ -2,8 +2,8 @@ import "../web/style.css";
 import "../web/editor.css";
 
 export const metadata = {
-  title: "Rarity Roulette · Cryptita Gacha",
-  description: "Create cards, spin a rarity roulette, and mint your winner on Base Sepolia."
+  title: "MARSU Roulette · Cryptita Gacha",
+  description: "Create cards, spin the MARSU Roulette, and mint your winner on Base Sepolia."
 };
 
 export default function RootLayout({ children }) {

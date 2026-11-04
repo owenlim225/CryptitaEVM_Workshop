@@ -33,7 +33,7 @@ function render() {
   $("disconnect-wallet").disabled = busy;
   $("edit").textContent = deck.length ? "Edit collection" : "Create a collection";
   $("edit").className = deck.length ? "jump" : "button-link";
-  $("win-link").hidden = !win?.receipt;
+  $("win-link").hidden = !win?.receipt || busy;
   $("receipt").hidden = !win?.receipt;
   $("import").disabled = busy;
   if (!win) return;
@@ -132,8 +132,7 @@ async function verifyMint(provider, pending) {
   render();
   return true;
 }
-async function showMintedResult(wallet, account) {
-  await offerImport(wallet, account);
+async function showMintedResult() {
   await revealRarity(win.card.rarity, win.card.name);
   $("result-dialog").showModal();
 }
@@ -165,7 +164,7 @@ async function claim() {
         throw Error("The previous transaction reverted. Your card is saved and ready to retry.");
       }
       if (mined?.contractAddress) pending = {...pending, address:mined.contractAddress};
-      try { if (await verifyMint(provider, pending)) { await showMintedResult(wallet, account); return; } }
+      try { if (await verifyMint(provider, pending)) { await showMintedResult(); return; } }
       catch (error) {
         const unrelatedCreation = pending.create && !mined && ["BAD_DATA", "CALL_EXCEPTION"].includes(error.code);
         if (!unrelatedCreation) throw error;
@@ -215,7 +214,7 @@ async function claim() {
       save({...win, pending});
     }
     if (!await verifyMint(provider, pending)) throw Error("The mint is confirmed but token data is still loading. Check spin status.");
-    await showMintedResult(wallet, account);
+    await showMintedResult();
   } finally { provider.destroy(); }
 }
 async function offerImport(wallet, account) {

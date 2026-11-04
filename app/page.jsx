@@ -19,13 +19,13 @@ export default function Page() {
     <main>
       <section className="press" aria-labelledby="title">
         <div className="controls">
-          <h1 id="title">Rarity<br/><i>Roulette</i></h1>
+          <h1 id="title">MARSU<br/><i>Roulette</i></h1>
           <p>Create a deck, then pay 0.0001 test ETH to spin and mint a card into your wallet.</p>
           <span id="spin-action" className="spin-action" hidden><button id="spin" type="button">Pay &amp; spin</button><span id="spin-price">0.0001 test ETH + gas</span></span>
           <a id="edit" className="button-link" href="/deploy">Create a collection</a>
           <p id="deck-status" role="status" className="status">Loading deck…</p>
         </div>
-        <figure className="plate" aria-label="Rarity roulette wheel">
+        <figure className="plate" aria-label="MARSU Roulette wheel">
           <div className="plate-header"><span>CRYPTITA / GACHA</span><span id="deck-count">CARD DRAW</span></div>
           <div className="wheel-housing">
             <svg viewBox="0 0 320 320" role="img" aria-label="Rarity wheel with the chances for your saved deck.">

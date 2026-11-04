@@ -1,6 +1,6 @@
 # Blockchain Integration & Web3: From Smart Contracts to a Functional Web Application
 
-Build your own gacha card web app, connect it to MetaMask, and pay test ETH to spin and mint an ERC-721 NFT on **Base Sepolia**. This repository is the finished **Rarity Roulette** reference. The workshop starter supplies the interface and transaction recovery code; you implement the contract mint, card metadata and draw, network switch, and wallet connection.
+Build your own gacha card web app, connect it to MetaMask, and pay test ETH to spin and mint an ERC-721 NFT on **Base Sepolia**. This repository is the finished **MARSU Roulette** reference. The workshop starter supplies the interface and transaction recovery code; you implement the contract mint, card metadata and draw, network switch, and wallet connection.
 
 ## The outcome and the boundary
 
