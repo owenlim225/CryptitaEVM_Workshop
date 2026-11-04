@@ -92,14 +92,15 @@ footer { padding:1rem 0 2rem; border-top:1px solid var(--line); font-size:.82rem
 .button-link:hover { background:#5e0e91; }
 .mint-info { margin-top:.8rem; }
 
-#result-dialog { width:min(100% - 1.5rem, 28rem); max-height:calc(100dvh - 1.5rem); border:0; border-radius:16px; padding:0; color:var(--ink); background:var(--paper); box-shadow:0 24px 70px rgba(32,12,46,.35); }
+#result-dialog { width:min(100% - 2rem, 56rem); max-height:calc(100dvh - 2rem); border:0; border-radius:16px; padding:0; overflow:hidden; color:var(--ink); background:var(--paper); box-shadow:0 24px 70px rgba(32,12,46,.35); }
 #result-dialog::backdrop { background:rgba(25,10,36,.74); }
-.result-shell { display:grid; grid-template-columns:minmax(0,1fr); gap:1rem; max-height:calc(100dvh - 1.5rem); overflow-y:auto; padding:1.25rem; }
-.result-head { display:flex; justify-content:space-between; align-items:center; gap:1rem; }
-.result-head h2 { margin:0; }
-.result-head button { flex:none; }
-#reflective-root { width:min(100%,20rem); height:27rem; margin:auto; }
-.result-details { min-width:0; }
+.result-shell { display:grid; grid-template-columns:minmax(0,24rem) minmax(0,1fr); grid-template-rows:auto 1fr; max-height:calc(100dvh - 2rem); overflow-y:auto; }
+.result-head { grid-column:2; grid-row:1; display:flex; justify-content:space-between; align-items:start; gap:1rem; padding:2rem 2rem 0; }
+.result-head h2 { margin:0; font-size:2rem; line-height:1.1; }
+.result-head button { flex:none; min-height:36px; padding:.25rem .5rem; color:var(--dim); }
+.result-stage { grid-column:1; grid-row:1/3; display:flex; justify-content:center; align-items:flex-start; min-height:32rem; padding:3rem 1.5rem 2rem; background:#eadcf6; }
+#reflective-root { width:min(100%,19rem); height:26rem; }
+.result-details { grid-column:2; grid-row:2; min-width:0; padding:1.5rem 2rem 2rem; }
 .winner-card__top { display:flex; align-items:center; justify-content:space-between; gap:.5rem; color:#fbf8ff; font:.72rem/1.3 ui-monospace,monospace; letter-spacing:.06em; }
 .winner-card__top strong { font-size:.85rem; }
 .winner-card__art { display:block; width:100%; height:14rem; object-fit:contain; }
@@ -107,15 +108,27 @@ footer { padding:1rem 0 2rem; border-top:1px solid var(--line); font-size:.82rem
 .winner-card__bottom h3 { font:normal 1.35rem/1.1 Georgia,serif; margin:0 0 .25rem; }
 .winner-card__bottom p { font-size:.8rem; line-height:1.3; margin:0; }
 #result-dialog .receipt { margin:0; padding:0; border:0; }
-#result-dialog .receipt h2 { font-size:1.35rem; margin:0 0 .5rem; }
-#result-dialog .receipt dl { grid-template-columns:4.5rem minmax(0,1fr); font-size:.85rem; }
-#result-dialog .receipt button { display:inline-flex; align-items:center; gap:.55rem; margin-bottom:.75rem; }
-#result-dialog .receipt > dl { margin-top:.75rem; }
-#result-dialog .receipt details dl { margin-top:.75rem; }
+#result-dialog .receipt h2 { font-size:1.25rem; margin:0; }
+#result-dialog .receipt dl { grid-template-columns:5.5rem minmax(0,1fr); gap:0 .75rem; }
+#result-dialog .receipt dt, #result-dialog .receipt dd { padding:.7rem 0; border-bottom:1px solid var(--line); }
+#result-dialog .receipt dt { color:var(--dim); font-size:.82rem; }
+#result-dialog .receipt dd { font-size:.82rem; }
+#result-dialog #import { display:inline-flex; align-items:center; justify-content:center; gap:.55rem; width:100%; margin-top:1rem; background:white; border-color:#cbb4df; }
+#result-dialog #import:hover:enabled { background:var(--selected); }
+#result-dialog #import:disabled { background:#e6dfeb; border-color:var(--line); }
+#result-dialog #import-status:empty { display:none; }
+#result-dialog .receipt > dl { margin-top:1.5rem; border-top:1px solid var(--line); }
+#result-dialog .receipt summary { font-size:.88rem; font-weight:650; }
+#result-dialog .receipt details dl { margin-top:.5rem; }
 #result-dialog .receipt details p { margin-top:.75rem; font-size:.85rem; }
+@media(max-width:720px) {
+  .result-shell { grid-template-columns:minmax(0,1fr); grid-template-rows:auto auto auto; }
+  .result-head { grid-column:1; grid-row:1; padding:1.25rem 1.25rem 1rem; }
+  .result-stage { grid-column:1; grid-row:2; min-height:0; padding:1.5rem; }
+  #reflective-root { width:min(100%,18rem); height:24.5rem; }
+  .result-details { grid-column:1; grid-row:3; padding:1.5rem; }
+}
 @media(max-width:640px) {
-  .result-shell { gap:.75rem; padding:1rem; }
   .result-head h2 { font-size:1.4rem; }
-  #reflective-root { height:25rem; }
   .winner-card__art { height:12rem; }
 }

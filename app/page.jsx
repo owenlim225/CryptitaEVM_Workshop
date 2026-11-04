@@ -44,7 +44,7 @@ export default function Page() {
       <dialog id="result-dialog" aria-labelledby="result-heading">
         <div className="result-shell">
           <div className="result-head"><h2 id="result-heading">Your winning card</h2><button type="button" className="minor" id="close-result" aria-label="Close result">Close</button></div>
-          <div id="reflective-root"/>
+          <div className="result-stage"><div id="reflective-root"/></div>
           <div className="result-details">
             <section id="receipt" className="receipt" aria-labelledby="receipt-title" hidden>
               <h2 id="receipt-title">Mint receipt</h2>
