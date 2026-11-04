@@ -61,15 +61,17 @@ async function run(task, area = "deck-status") {
   finally { busy = false; render(); }
 }
 async function spin() {
-  await currentWallet();
+  let animation;
   if (!win || win.receipt) {
     const id = hexlify(randomBytes(32));
     save({id, card:deck[drawCard(id, deck)]});
     $("import-status").textContent = "";
     resetRoulette();
     render();
+    animation = revealRarity(win.card.rarity, win.card.name);
+    animation.catch(() => {});
   }
-  await claim();
+  await claim(animation);
 }
 async function connect() {
   const wallet = getMetaMask();
@@ -132,8 +134,9 @@ async function verifyMint(provider, pending) {
   render();
   return true;
 }
-async function showMintedResult() {
-  await revealRarity(win.card.rarity, win.card.name);
+async function showMintedResult(animation) {
+  if (animation) await animation;
+  else await revealRarity(win.card.rarity, win.card.name);
   $("result-dialog").showModal();
 }
 async function prepare(provider, account) {
@@ -150,7 +153,7 @@ async function prepare(provider, account) {
   }
   return {account, address:getCreateAddress({from:account, nonce}), nonce, create:true};
 }
-async function claim() {
+async function claim(animation) {
   const {wallet, account} = await currentWallet();
   if (win.pending && win.pending.account !== account) throw Error("Switch MetaMask back to " + win.pending.account + " to check this mint.");
   const provider = new BrowserProvider(wallet, undefined, {cacheTimeout:-1});
@@ -164,7 +167,7 @@ async function claim() {
         throw Error("The previous transaction reverted. Your card is saved and ready to retry.");
       }
       if (mined?.contractAddress) pending = {...pending, address:mined.contractAddress};
-      try { if (await verifyMint(provider, pending)) { await showMintedResult(); return; } }
+      try { if (await verifyMint(provider, pending)) { await showMintedResult(animation); return; } }
       catch (error) {
         const unrelatedCreation = pending.create && !mined && ["BAD_DATA", "CALL_EXCEPTION"].includes(error.code);
         if (!unrelatedCreation) throw error;
@@ -214,7 +217,7 @@ async function claim() {
       save({...win, pending});
     }
     if (!await verifyMint(provider, pending)) throw Error("The mint is confirmed but token data is still loading. Check spin status.");
-    await showMintedResult();
+    await showMintedResult(animation);
   } finally { provider.destroy(); }
 }
 async function offerImport(wallet, account) {
