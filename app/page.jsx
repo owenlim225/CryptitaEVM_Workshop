@@ -48,8 +48,8 @@ export default function Page() {
           <div className="result-details">
             <section id="receipt" className="receipt" aria-labelledby="receipt-title" hidden>
               <h2 id="receipt-title">Mint receipt</h2>
+              <button type="button" id="import" className="minor"><Image src="/metamask-icon.svg" alt="" width={22} height={22}/>Add NFT to MetaMask</button><p id="import-status" className="status" role="status"/>
               <dl><dt>Contract</dt><dd id="receipt-address"/><dt>Token ID</dt><dd id="token"/></dl>
-              <button type="button" id="import" className="minor">Add NFT to MetaMask</button><p id="import-status" className="status" role="status"/>
               <details><summary>More receipt details</summary>
                 <dl><dt>Network</dt><dd id="receipt-network"/><dt>Owner</dt><dd id="owner"/><dt>Transaction</dt><dd id="tx"/></dl>
                 <p>If MetaMask does not show the NFT, import it using the contract address and token ID above.</p>

@@ -109,7 +109,8 @@ footer { padding:1rem 0 2rem; border-top:1px solid var(--line); font-size:.82rem
 #result-dialog .receipt { margin:0; padding:0; border:0; }
 #result-dialog .receipt h2 { font-size:1.35rem; margin:0 0 .5rem; }
 #result-dialog .receipt dl { grid-template-columns:4.5rem minmax(0,1fr); font-size:.85rem; }
-#result-dialog .receipt button { margin-top:.75rem; }
+#result-dialog .receipt button { display:inline-flex; align-items:center; gap:.55rem; margin-bottom:.75rem; }
+#result-dialog .receipt > dl { margin-top:.75rem; }
 #result-dialog .receipt details dl { margin-top:.75rem; }
 #result-dialog .receipt details p { margin-top:.75rem; font-size:.85rem; }
 @media(max-width:640px) {
