@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { cardMetadata, cardMetadataUri, drawCard, readDeck, saveDeck } from "../web/cards.js";
+import { cardMetadata, cardMetadataUri, drawCard, readDeck, saveDeck, validateCard } from "../web/cards.js";
+import { seedDeck } from "../web/seed-deck.js";
 
 test("a finished deck is a local snapshot and a partial deck draws only from its chosen tiers", () => {
   const data = new Map();
@@ -12,7 +13,12 @@ test("a finished deck is a local snapshot and a partial deck draws only from its
     { name: "Fox", image: "https://example.com/fox.png", description: "First sketch", rarity: 0 },
     { name: "Owl", image: "https://example.com/owl.png", description: "Moonlit sketch", rarity: 4 }
   ];
-  assert.deepEqual(readDeck(), []);
+  assert.deepEqual(readDeck(), seedDeck);
+  assert.deepEqual(seedDeck.map(({name, rarity}) => [name, rarity]), [
+    ["Emman", 2], ["Tita", 4], ["Albert", 0], ["Joshua", 1], ["Russel", 3],
+    ["Sherwin", 1], ["Ella", 2], ["Lucky", 3], ["Tristan", 4]
+  ]);
+  seedDeck.forEach(validateCard);
   saveDeck(cards);
   cards[0].name = "Draft revision";
   const deck = readDeck();
