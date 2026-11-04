@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { cardMetadata, drawCard, readDeck, saveDeck } from "../web/cards.js";
+import { cardMetadata, cardMetadataUri, drawCard, readDeck, saveDeck } from "../web/cards.js";
 
 test("a finished deck is a local snapshot and a partial deck draws only from its chosen tiers", () => {
   const data = new Map();
@@ -27,4 +27,11 @@ test("a finished deck is a local snapshot and a partial deck draws only from its
   assert.equal(drawCard("0xabcd", readDeck()), 0);
   assert.throws(() => saveDeck([{ ...deck[0], description: "x".repeat(8200) }]), /8 KiB/);
   assert.equal(readDeck().length, 1);
+});
+
+test("encodes a card's UTF-8 metadata as a self-contained token URI", () => {
+  const card = {name:"Lunà 🌙", description:"Moonlit sketch", image:"https://example.com/moon.png", rarity:4};
+  const uri = cardMetadataUri(card);
+  assert.ok(uri.startsWith("data:application/json;base64,"));
+  assert.equal(Buffer.from(uri.split(",")[1], "base64").toString("utf8"), cardMetadata(card));
 });

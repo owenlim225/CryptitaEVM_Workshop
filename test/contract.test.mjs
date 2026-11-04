@@ -3,10 +3,11 @@ import { before, test } from "node:test";
 import { BrowserProvider, ContractFactory, ZeroHash, id, parseEther } from "ethers";
 import hre from "hardhat";
 import artifact from "../artifacts/Gacha.json" with { type: "json" };
+import { cardMetadataUri } from "../web/cards.js";
 
 let game, factory, player, other, provider;
 const firstWin = id("first win");
-const firstUri = "https://ivory-additional-snail-831.mypinata.cloud/ipfs/bafkreibc7d3vnc24vsg3inh6s6qh6d2xlfhd62fexxt3n5pxtuoshsk7be";
+const firstUri = cardMetadataUri({name:"First card", description:"A winner", image:"https://example.com/card.png", rarity:0});
 const price = parseEther("0.0001");
 
 before(async () => {
@@ -31,7 +32,7 @@ test("recovering a previous win returns its original token, even after a transfe
   const from = await player.getAddress();
   const to = await other.getAddress();
   assert.equal(await game.mintedToken(from, firstWin), 1n);
-  await expectRevert(game.mint.staticCall(firstWin, "https://example.com/edited", {value:price}), "AlreadyMinted", [1]);
+  await expectRevert(game.mint.staticCall(firstWin, cardMetadataUri({name:"Edited", description:"No", image:"https://example.com/card.png", rarity:0}), {value:price}), "AlreadyMinted", [1]);
   await (await game.transferFrom(from, to, 1n)).wait();
   assert.equal(await game.ownerOf(1n), to);
   assert.equal(await game.mintedToken(from, firstWin), 1n);
@@ -41,7 +42,7 @@ test("recovering a previous win returns its original token, even after a transfe
 
 test("the same win identifier can be used independently by another account", async () => {
   const recipient = await other.getAddress();
-  const uri = "https://ivory-additional-snail-831.mypinata.cloud/ipfs/bafybeih2ejr7xgpgbnpk7j2tlpshrz5t6w5v32xvr6jeyg2p6x6cy6s6ia";
+  const uri = cardMetadataUri({name:"Second card", description:"Another winner", image:"https://example.com/other.png", rarity:3});
   assert.equal(await game.mintedToken(recipient, firstWin), 0n);
   await (await game.connect(other).mint(firstWin, uri, {value:price})).wait();
   const token = await game.mintedToken(recipient, firstWin);
@@ -55,7 +56,7 @@ test("deployment and later mints reject unusable IDs and metadata URIs", async (
   const win = id("input validation");
   for (const submit of [(key, uri) => factory.deploy(key, uri, {value:price}), (key, uri) => game.mint(key, uri, {value:price})]) {
     await expectRevert(submit(ZeroHash, firstUri), "InvalidWinId", []);
-    for (const uri of ["", "http://example.com/card.json", "ipfs://bafytest", "https://", "https://" + "a".repeat(249)]) {
+    for (const uri of ["", "http://example.com/card.json", "ipfs://bafytest", "https://example.com/card.json", "data:application/json;base64,", "data:application/json;base64," + "a".repeat(10925)]) {
       await expectRevert(submit(win, uri), "InvalidMetadataURI", []);
     }
   }

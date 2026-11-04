@@ -41,9 +41,12 @@ contract Gacha is ERC721URIStorage {
         uint256 previousToken = mintedToken[msg.sender][winId];
         if (previousToken != 0) revert AlreadyMinted(previousToken);
         bytes memory uri = bytes(metadataUri);
-        if (uri.length < 9 || uri.length > 256 ||
-            uri[0] != 'h' || uri[1] != 't' || uri[2] != 't' || uri[3] != 'p' ||
-            uri[4] != 's' || uri[5] != ':' || uri[6] != '/' || uri[7] != '/') revert InvalidMetadataURI();
+        bytes memory prefix = bytes("data:application/json;base64,");
+        // 8 KiB of JSON becomes at most 10,924 Base64 bytes plus this 29-byte prefix.
+        if (uri.length <= prefix.length || uri.length > 10953) revert InvalidMetadataURI();
+        for (uint256 i; i < prefix.length; i++) {
+            if (uri[i] != prefix[i]) revert InvalidMetadataURI();
+        }
 
         tokenId = nextTokenId++;
         mintedToken[msg.sender][winId] = tokenId;

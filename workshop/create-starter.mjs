@@ -19,7 +19,7 @@ try {
 await mkdir(target, { recursive: true });
 for (const item of [
   "app", "contracts", "scripts", "test", "web", "package.json", "package-lock.json",
-  "hardhat.config.cjs", "next.config.mjs", ".gitignore", ".env.example", "AGENTS.md", "README.md",
+  "hardhat.config.cjs", "next.config.mjs", ".gitignore", "AGENTS.md", "README.md",
   "IMPLEMENTATION_PLAN.md"
 ]) {
   await cp(join(root, item), join(target, item), { recursive: true });
@@ -47,7 +47,7 @@ await replace("contracts/Gacha.sol", "    function _mintCard(", "\n}", `    func
         // TODO 1: validate, remember and mint this win.
         revert("Complete _mintCard in the README");
     }`);
-await replace("web/cards.js", "export function cardMetadata(", "export function validateCard(", `export function cardMetadata(card) {
+await replace("web/cards.js", "export function cardMetadata(", "export function cardMetadataUri(", `export function cardMetadata(card) {
   // TODO 2: encode name, description, image and Rarity attribute as JSON.
   throw Error("Complete cardMetadata in the README");
 }

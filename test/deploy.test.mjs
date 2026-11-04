@@ -3,14 +3,15 @@ import { test } from "node:test";
 import { BrowserProvider, ContractFactory, ZeroAddress, id, parseEther } from "ethers";
 import hre from "hardhat";
 import artifact from "../artifacts/Gacha.json" with { type: "json" };
+import { cardMetadataUri } from "../web/cards.js";
 
 test("the first wallet confirmation deploys and mints, the next mints into that same collection", async () => {
   hre.network.config.chainId = 84532;
   const provider = new BrowserProvider(hre.network.provider);
   const player = await provider.getSigner();
   const recipient = await player.getAddress();
-  const first = "https://ivory-additional-snail-831.mypinata.cloud/ipfs/bafkreibc7d3vnc24vsg3inh6s6qh6d2xlfhd62fexxt3n5pxtuoshsk7be";
-  const next = "https://ivory-additional-snail-831.mypinata.cloud/ipfs/bafybeih2ejr7xgpgbnpk7j2tlpshrz5t6w5v32xvr6jeyg2p6x6cy6s6ia";
+  const first = cardMetadataUri({name:"First", description:"Opening card", image:"https://example.com/first.png", rarity:0});
+  const next = cardMetadataUri({name:"Second", description:"Next card", image:"data:image/jpeg;base64," + "A".repeat(5000), rarity:4});
   const price = parseEther("0.0001");
   const collection = await new ContractFactory(artifact.abi, artifact.bytecode, player).deploy(id("win 1"), first, {value:price});
   const address = await collection.getAddress();

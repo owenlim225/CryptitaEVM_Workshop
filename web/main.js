@@ -1,6 +1,6 @@
 import { BrowserProvider, Contract, ContractFactory, getAddress, getCreateAddress, hexlify, parseEther, randomBytes, toQuantity } from "ethers";
 import artifact from "../artifacts/Gacha.json";
-import { readDeck, cardMetadata, drawCard } from "./cards.js";
+import { readDeck, cardMetadata, cardMetadataUri, drawCard } from "./cards.js";
 import { BASE_SEPOLIA, getMetaMask, switchNetwork, walletError } from "./wallet.js";
 import { initRoulette, resetRoulette, revealRarity } from "./roulette.js";
 import { showResultCard } from "./components/result-card.jsx";
@@ -61,10 +61,6 @@ async function run(task, area = "deck-status") {
 }
 async function spin() {
   await currentWallet();
-  if (!win || win.receipt || !win.metadataUri) {
-    const response = await fetch("/api/metadata");
-    if (!response.ok) throw Error((await response.json()).error || "Pinata setup is unavailable.");
-  }
   if (!win || win.receipt) {
     const id = hexlify(randomBytes(32));
     save({id, card:deck[drawCard(id, deck)]});
@@ -119,11 +115,14 @@ async function verifyMint(provider, pending) {
   const token = await nft.mintedToken(pending.account, win.id);
   if (!token) return false;
   const [owner, uri] = await Promise.all([nft.ownerOf(token), nft.tokenURI(token)]);
-  if (uri !== win.metadataUri) throw Error("The token URI differs from the uploaded winning card. Check the mint receipt.");
-  const response = await fetch(uri);
-  if (!response.ok) throw Error("The uploaded metadata is not available yet. Check spin status again shortly.");
-  const json = await response.text();
-  if (json !== cardMetadata(win.card)) throw Error("The token metadata differs from the winning card. Check the mint receipt.");
+  if (uri !== win.metadataUri) throw Error("The token URI differs from the winning card. Check the mint receipt.");
+  if (uri.startsWith("data:application/json;base64,")) {
+    if (uri !== cardMetadataUri(win.card)) throw Error("The token metadata differs from the winning card. Check the mint receipt.");
+  } else {
+    const response = await fetch(uri);
+    if (!response.ok) throw Error("The uploaded metadata is not available yet. Check spin status again shortly.");
+    if (await response.text() !== cardMetadata(win.card)) throw Error("The token metadata differs from the winning card. Check the mint receipt.");
+  }
   // mintedToken is keyed by the original recipient. The token may have moved since minting.
   const receipt = {address:pending.address, token:String(token), owner, hash:pending.hash};
   localStorage.setItem(minterKey(pending.account), JSON.stringify({address:pending.address, winId:win.id}));
@@ -144,7 +143,7 @@ async function prepare(provider, account) {
     const nft = new Contract(known.address, artifact.abi, provider);
     const previousToken = await nft.mintedToken(account, known.winId);
     if (!previousToken) throw Error("Could not verify the saved minter for this account.");
-    if (!(await nft.tokenURI(previousToken)).startsWith("https://")) {
+    if (!(await nft.tokenURI(previousToken)).startsWith("data:application/json;base64,")) {
       return {account, address:getCreateAddress({from:account, nonce}), nonce, create:true};
     }
     return {account, address:known.address, nonce, create:false};
@@ -183,14 +182,8 @@ async function claim() {
       if (!window.confirm("No pending transaction is visible. Retry this same win using the original transaction nonce?")) return;
     }
     let metadataUri = win.metadataUri;
-    if (!metadataUri) {
-      $("deck-status").textContent = "Preparing card metadata on IPFS…";
-      const response = await fetch("/api/metadata", {
-        method:"POST", headers:{"Content-Type":"application/json"}, body:cardMetadata(win.card)
-      });
-      const result = await response.json();
-      if (!response.ok) throw Error(result.error || "Metadata upload failed.");
-      metadataUri = result.uri;
+    if (!metadataUri || (!previous && !metadataUri.startsWith("data:application/json;base64,"))) {
+      metadataUri = cardMetadataUri(win.card);
       save({...win, metadataUri});
     }
     const factory = new ContractFactory(artifact.abi, artifact.bytecode);

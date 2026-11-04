@@ -14,7 +14,7 @@ By the end, you should have a locally running app that lets you create a 1–25 
 | Token | The on-chain NFT created for a chosen win |
 | Contract | Your reusable ERC-721 collection on Base Sepolia (chain 84532) |
 
-Cards and draws are local. Before the wallet transaction, the browser selects a card without showing it in the interface and uploads its JSON to public IPFS through Pinata; only the HTTPS metadata URL is written on-chain. The result appears after the paid mint is verified. The 0.0001 test ETH fee goes into the player's own contract and can be withdrawn by that player. This is a classroom payment demo: the browser controls the outcome, so it is unsuitable for real-money prizes. Mainnet, marketplaces, and provably fair randomness are outside this workshop.
+Cards and draws are local. Before the wallet transaction, the browser selects a card without showing it and encodes its JSON as a self-contained <code>data:application/json;base64,</code> token URI. The URI is stored on-chain during the paid mint, so no Pinata account or upload key is needed. The result appears after the mint is verified. Storing metadata on-chain uses more gas, especially when a card includes an embedded photo. The 0.0001 test ETH fee goes into the player's own contract and can be withdrawn by that player. This is a classroom payment demo: the browser controls the outcome, so it is unsuitable for real-money prizes. Mainnet, marketplaces, and provably fair randomness are outside this workshop.
 
 ## 1. Prepare your computer and wallet
 
@@ -31,9 +31,7 @@ Cards and draws are local. Before the wallet transaction, the browser selects a 
 4. In MetaMask, choose your test account. Add **Base Sepolia** if it is missing: RPC <code>https://sepolia.base.org</code>, chain ID <code>84532</code>, currency symbol <code>ETH</code>, explorer <code>https://sepolia.basescan.org</code>. The app can also ask MetaMask to add or switch to this network. Check the chain ID before signing. See [Base's network details](https://docs.base.org/get-started/connect-to-base).
 5. Get Base Sepolia test ETH from a [Base testnet faucet](https://docs.base.org/get-started/get-funds) or your facilitator. Each spin needs 0.0001 test ETH plus gas; contract creation needs more gas than a later mint. Do not move real ETH to the test account for this lab.
 
-6. Create a [Pinata API key and find your gateway domain](https://docs.pinata.cloud/frameworks/next-js#create-an-api-key-and-get-gateway-url). Keep the JWT private; you will add it to your student project after generating the starter in §2.
-
-**No private key or recovery phrase goes into this project.** MetaMask signs transactions in the browser. The Pinata JWT stays on the server and is never sent to the browser. An image can still use an HTTPS or <code>ipfs://</code> URL; a local thumbnail becomes part of the uploaded JSON.
+**No private key or recovery phrase goes into this project.** MetaMask signs transactions in the browser. An image can still use an HTTPS or <code>ipfs://</code> URL; a local thumbnail becomes part of the on-chain JSON URI.
 
 ## 2. See the finished target, then create your starter
 
@@ -44,7 +42,7 @@ Cards and draws are local. Before the wallet transaction, the browser selects a 
    npm run dev
    ~~~
 
-2. Open [http://localhost:5173](http://localhost:5173). Choose **Create a collection**, save at least one card, and choose **Finish collection & spin** to inspect the wheel. A paid spin requires the funded test wallet and Pinata key configured in §1 and §2; you can complete it in your student project. Stop the dev server with Ctrl+C. In the browser's DevTools, open **Application → Storage → Clear site data** for <code>localhost:5173</code> before starting your own project; otherwise the reference deck and receipt will appear in your student app because both use the same local origin.
+2. Open [http://localhost:5173](http://localhost:5173). Choose **Create a collection**, save at least one card, and choose **Finish collection & spin** to inspect the wheel. A paid spin requires a funded test wallet; you can complete it in your student project. Stop the dev server with Ctrl+C. In the browser's DevTools, open **Application → Storage → Clear site data** for <code>localhost:5173</code> before starting your own project; otherwise the reference deck and receipt will appear in your student app because both use the same local origin.
 3. From the reference repository root, generate your **separate** student project:
 
    ~~~sh
@@ -55,18 +53,9 @@ Cards and draws are local. Before the wallet transaction, the browser selects a 
    ~~~
 
    Choose another folder name if <code>my-gacha</code> already exists. The generator refuses to overwrite an existing folder. You now edit files in <code>my-gacha</code>, not the reference checkout. The new project's <code>README.md</code> is this guide. The initial tests are expected to fail until you complete the TODOs.
-4. In <code>my-gacha</code>, copy <code>.env.example</code> to <code>.env.local</code> and replace both placeholders with your Pinata values:
-
-   ~~~text
-   PINATA_JWT=your-jwt
-   PINATA_GATEWAY_URL=https://your-gateway.mypinata.cloud
-   ~~~
-
-   Keep the JWT private; <code>.env.local</code> is ignored by Git. Restart the dev server after adding it. The app checks this setup before drawing a card. The server uploads winning-card JSON to public IPFS before the mint transaction is submitted. The upload endpoint is intended for this local workshop; add authentication and rate limits before deploying it publicly.
-
 ## 3. Implement the Solidity NFT
 
-Open <code>contracts/Gacha.sol</code>. Like the <code>MyNFT</code> example, it inherits OpenZeppelin's <code>ERC721URIStorage</code>, calls <code>_safeMint</code>, and then calls <code>_setTokenURI</code> with a Pinata URL. The constructor calls <code>_mintCard</code> so the deployment transaction issues the first NFT. The public <code>mint</code> function uses the same routine for later wins. Replace the TODO function with:
+Open <code>contracts/Gacha.sol</code>. Like the <code>MyNFT</code> example, it inherits OpenZeppelin's <code>ERC721URIStorage</code>, calls <code>_safeMint</code>, and then calls <code>_setTokenURI</code> with the card's JSON data URI. The constructor calls <code>_mintCard</code> so the deployment transaction issues the first NFT. The public <code>mint</code> function uses the same routine for later wins. Replace the TODO function with:
 
 ~~~solidity
 function _mintCard(bytes32 winId, string memory metadataUri) private returns (uint256 tokenId) {
@@ -75,9 +64,11 @@ function _mintCard(bytes32 winId, string memory metadataUri) private returns (ui
     uint256 previousToken = mintedToken[msg.sender][winId];
     if (previousToken != 0) revert AlreadyMinted(previousToken);
     bytes memory uri = bytes(metadataUri);
-    if (uri.length < 9 || uri.length > 256 ||
-        uri[0] != 'h' || uri[1] != 't' || uri[2] != 't' || uri[3] != 'p' ||
-        uri[4] != 's' || uri[5] != ':' || uri[6] != '/' || uri[7] != '/') revert InvalidMetadataURI();
+    bytes memory prefix = bytes("data:application/json;base64,");
+    if (uri.length <= prefix.length || uri.length > 10953) revert InvalidMetadataURI();
+    for (uint256 i; i < prefix.length; i++) {
+        if (uri[i] != prefix[i]) revert InvalidMetadataURI();
+    }
 
     tokenId = nextTokenId++;
     mintedToken[msg.sender][winId] = tokenId;
@@ -86,7 +77,7 @@ function _mintCard(bytes32 winId, string memory metadataUri) private returns (ui
 }
 ~~~
 
-The exact-payment check requires 0.0001 test ETH on deployment and every later mint. The duplicate check is scoped to <code>msg.sender</code> and win ID. It prevents that sender from minting the same win twice, even after transferring the first NFT. Token IDs start at 1, so zero means “not minted.” <code>ERC721URIStorage</code> supplies <code>tokenURI()</code> and stores the HTTPS URL set by <code>_setTokenURI</code>. The contract accepts URLs of at most 256 bytes; the upload endpoint limits JSON to 8,192 **UTF-8 bytes**. The deploying wallet owns the collection's accumulated test ETH and can call <code>withdraw()</code>.
+The exact-payment check requires 0.0001 test ETH on deployment and every later mint. The duplicate check is scoped to <code>msg.sender</code> and win ID. It prevents that sender from minting the same win twice, even after transferring the first NFT. Token IDs start at 1, so zero means “not minted.” <code>ERC721URIStorage</code> supplies <code>tokenURI()</code> and stores the JSON data URI set by <code>_setTokenURI</code>. The editor limits JSON to 8,192 **UTF-8 bytes**, which becomes at most 10,953 bytes after Base64 encoding and the URI prefix. The deploying wallet owns the collection's accumulated test ETH and can call <code>withdraw()</code>.
 
 Run:
 
@@ -190,9 +181,9 @@ async function connect() {
 }
 ~~~
 
-Trace the supplied <code>spin</code> and <code>claim</code> functions in that same file. Connect the wallet in the header before spinning. They select a hidden card, upload its JSON to Pinata, save the URI, and prepare a 0.0001 test ETH transaction. The first transaction deploys the contract and mints the NFT; later spins call <code>mint</code> on the saved contract. After confirmation, the app verifies <code>mintedToken</code>, <code>ownerOf</code>, <code>tokenURI</code> and the fetched JSON, offers to add the NFT in MetaMask, and then opens the result modal. The pending transaction code lets the user return after an interrupted confirmation without paying twice for the same spin.
+Trace the supplied <code>spin</code> and <code>claim</code> functions in that same file. Connect the wallet in the header before spinning. They select a hidden card, encode its JSON into a data URI, save the URI, and prepare a 0.0001 test ETH transaction. The first transaction deploys the contract and mints the NFT; later spins call <code>mint</code> on the saved contract. After confirmation, the app verifies <code>mintedToken</code>, <code>ownerOf</code> and <code>tokenURI</code> against the winning card, offers to add the NFT in MetaMask, and then opens the result modal. The pending transaction code lets the user return after an interrupted confirmation without paying twice for the same spin.
 
-Run <code>npm test</code>. All thirteen student-project tests should pass before you try a public testnet mint.
+Run <code>npm test</code>. All student-project tests should pass before you try a public testnet mint.
 
 ## 6. Make the app yours and run it
 
@@ -201,12 +192,12 @@ Run <code>npm test</code>. All thirteen student-project tests should pass before
 3. Run <code>npm test</code>, then <code>npm run dev</code>. Open [http://localhost:5173](http://localhost:5173). The editor is at <code>/deploy</code>.
 4. Create a card with your own title, description, rarity and photo. Use an HTTPS or <code>ipfs://</code> image URL, or upload a JPG/PNG/WebP thumbnail. Add at least one more card in a different rarity. Save each card, choose **Finish collection & spin**, connect MetaMask in the header, then choose **Pay & spin**. Record the winning name, rarity, image URI and description from the result.
 
-**Checkpoint:** you can build the collection without MetaMask. The paid spin needs MetaMask, Pinata, and Base Sepolia test ETH. The collection and current transaction are saved in this browser and local origin. Do not switch browsers or local ports while a mint is pending.
+**Checkpoint:** you can build the collection without MetaMask. The paid spin needs MetaMask and Base Sepolia test ETH for the fee plus on-chain metadata gas. The collection and current transaction are saved in this browser and local origin. Do not switch browsers or local ports while a mint is pending.
 
 ## 7. Pay, mint, then reveal on Base Sepolia
 
 1. Unlock MetaMask. Check the selected test account, chain ID **84532**, and its Base Sepolia test ETH balance.
-2. Choose **Connect wallet** in the header, approve the account and network prompts, then choose **Pay & spin** or **Spin again**. The app checks Pinata setup and prepares the selected card's metadata on public IPFS before asking for payment.
+2. Choose **Connect wallet** in the header, approve the account and network prompts, then choose **Pay & spin** or **Spin again**. The app encodes the selected card's metadata into the transaction before asking for payment.
 3. Review the wallet transaction: **0.0001 test ETH plus gas**. The first spin also creates your contract. Confirm it and wait for verification; if you reject it, use **Retry paid spin** for the same hidden card.
 4. The app verifies the minted NFT and asks MetaMask to add it. The result dialog then opens. Record the contract address, token ID, receiving account and transaction hash. Open it on [Base Sepolia BaseScan](https://sepolia.basescan.org/) and check that it succeeded. The ERC-721 <code>Transfer</code> event should have the zero address as sender and your account as recipient.
 5. If your MetaMask version does not import the NFT automatically, open its **NFTs → Import NFT** screen and enter the **contract address and token ID** on Base Sepolia. The transaction hash is not the NFT address. See [MetaMask's NFT import guide](https://support.metamask.io/nfts/nft-tokens-in-your-metamask-wallet/).
@@ -221,10 +212,9 @@ Open <code>workshop/exercises/inspect-token.mjs</code> in your student project. 
 ~~~js
 const owner = await contract.ownerOf(id);
 const uri = await contract.tokenURI(id);
-if (!/^https:\/\/[a-z0-9-]+\.mypinata\.cloud\/ipfs\/b[a-z2-7]{20,}$/.test(uri)) throw new Error("Unexpected metadata URI");
-const response = await fetch(uri);
-if (!response.ok) throw new Error("Metadata is unavailable from IPFS");
-const card = await response.json();
+const prefix = "data:application/json;base64,";
+if (!uri.startsWith(prefix)) throw new Error("Unexpected metadata URI");
+const card = JSON.parse(Buffer.from(uri.slice(prefix.length), "base64").toString("utf8"));
 const rarity = card.attributes.find(attribute => attribute.trait_type === "Rarity").value;
 return { owner, name: card.name, description: card.description, image: card.image, rarity };
 ~~~
@@ -235,7 +225,7 @@ Run the inspector with the values from **your** mint receipt:
 node workshop/exercises/inspect-token.mjs CONTRACT_ADDRESS TOKEN_ID
 ~~~
 
-Replace both placeholders. It reads the public chain and IPFS and needs no wallet secret. If the public RPC is unavailable, set <code>WORKSHOP_RPC_URL</code> to another **chain-84532** endpoint. Compare its owner, name, description, image URI and rarity with your recorded winner. If you transferred the NFT, <code>ownerOf</code> changes while <code>tokenURI</code> stays the same. A public IPFS gateway can take time to retrieve a new CID; retry if the mint is confirmed but metadata is not available yet.
+Replace both placeholders. It reads the public chain and decodes the on-chain metadata without a wallet secret. If the public RPC is unavailable, set <code>WORKSHOP_RPC_URL</code> to another **chain-84532** endpoint. Compare its owner, name, description, image URI and rarity with your recorded winner. If you transferred the NFT, <code>ownerOf</code> changes while <code>tokenURI</code> stays the same.
 
 ## 9. Final checks and hand-in
 
@@ -251,7 +241,7 @@ Run <code>npm test</code> and <code>npm run build</code>. The production build i
 | --- | --- |
 | A tier never appears | Only tiers represented in the finished deck participate. |
 | A card exceeds the limit | Shorten its metadata or use a permanent image URL; uploads become small embedded thumbnails. |
-| Metadata upload fails | Check <code>PINATA_JWT</code> and <code>PINATA_GATEWAY_URL</code> in <code>.env.local</code>, restart the dev server, then retry. |
+| The wallet estimates high gas | Use a permanent image URL instead of an embedded photo, or shorten the card details. |
 | MetaMask is missing | Enable and unlock the extension in this browser profile, reload, then retry. |
 | Wrong network or no gas | Verify chain 84532 and enough Base Sepolia test ETH for the fee plus gas. |
 | NFT is absent in MetaMask | Check the successful receipt, current account and chain; import by contract address and token ID. |

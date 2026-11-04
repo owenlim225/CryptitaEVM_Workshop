@@ -20,6 +20,10 @@ export function cardMetadata(card) {
   });
 }
 
+export function cardMetadataUri(card) {
+  return "data:application/json;base64," + btoa(String.fromCharCode(...new TextEncoder().encode(cardMetadata(card))));
+}
+
 export function validateCard(card, index) {
   const label = "Card " + (index + 1);
   if (!card || typeof card.name !== "string" || !card.name.trim() ||
