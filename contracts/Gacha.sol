@@ -9,20 +9,34 @@ contract Gacha is ERC721URIStorage {
     error InvalidWinId();
     error InvalidMetadataURI();
     error AlreadyMinted(uint256 tokenId);
+    error IncorrectPayment(uint256 sent);
+    error NotCollectionOwner();
+    error WithdrawalFailed();
+
+    uint256 public constant SPIN_PRICE = 0.0001 ether;
+    address public immutable collectionOwner;
 
     uint256 private nextTokenId = 1;
     mapping(address => mapping(bytes32 => uint256)) public mintedToken;
 
-    constructor(bytes32 winId, string memory metadataUri) ERC721("Cryptita Gacha", "GACHA") {
-        if (block.chainid != 97) revert UnsupportedChain(block.chainid);
+    constructor(bytes32 winId, string memory metadataUri) payable ERC721("Cryptita Gacha", "GACHA") {
+        if (block.chainid != 84532) revert UnsupportedChain(block.chainid);
+        collectionOwner = msg.sender;
         _mintCard(winId, metadataUri);
     }
 
-    function mint(bytes32 winId, string calldata metadataUri) external returns (uint256) {
+    function mint(bytes32 winId, string calldata metadataUri) external payable returns (uint256) {
         return _mintCard(winId, metadataUri);
     }
 
+    function withdraw() external {
+        if (msg.sender != collectionOwner) revert NotCollectionOwner();
+        (bool sent,) = payable(msg.sender).call{value: address(this).balance}("");
+        if (!sent) revert WithdrawalFailed();
+    }
+
     function _mintCard(bytes32 winId, string memory metadataUri) private returns (uint256 tokenId) {
+        if (msg.value != SPIN_PRICE) revert IncorrectPayment(msg.value);
         if (winId == bytes32(0)) revert InvalidWinId();
         uint256 previousToken = mintedToken[msg.sender][winId];
         if (previousToken != 0) revert AlreadyMinted(previousToken);

@@ -34,6 +34,15 @@ export function initRoulette(cards) {
     </g>`).join("");
 }
 
+export function resetRoulette() {
+  rotation = 0;
+  document.getElementById("wheel-disc").style.transform = "rotate(0deg)";
+  document.getElementById("plate-title").textContent = "Waiting for paid mint…";
+  const code = document.getElementById("plate-code");
+  code.textContent = "—";
+  code.style.backgroundColor = "";
+}
+
 export async function revealRarity(tierIndex, identityLabel, animate = true) {
   const slot = slots[tierIndex];
   if (!slot) throw RangeError("Unknown rarity.");

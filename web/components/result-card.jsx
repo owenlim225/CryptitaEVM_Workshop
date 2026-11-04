@@ -1,13 +1,28 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
+import ReflectiveCard from "./ReflectiveCard.jsx";
 import { imageSrc, tierNames } from "../cards.js";
-import "./ReflectiveCard.css";
 
 const root = createRoot(document.getElementById("reflective-root"));
 
 export function showResultCard(card) {
   root.render(
-    <article className="winner-card">
+    <ReflectiveCard
+      className="winner-card"
+      theme="dark"
+      width="100%"
+      height="100%"
+      tint="#d9e8bf"
+      metalness={0.72}
+      roughness={0.42}
+      blurStrength={4}
+      shine={1.3}
+      glare={0.42}
+      tiltStrength={8}
+      radius={20}
+      webcam={false}
+      intro
+    >
       <div className="winner-card__top">
         <span>CRYPTITA / GACHA</span>
         <strong>{tierNames[card.rarity]}</strong>
@@ -17,6 +32,6 @@ export function showResultCard(card) {
         <h3>{card.name}</h3>
         <p>{card.description}</p>
       </div>
-    </article>
+    </ReflectiveCard>
   );
 }

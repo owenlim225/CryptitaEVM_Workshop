@@ -6,14 +6,14 @@ if (!address || !/^\d+$/.test(tokenId ?? "")) {
   throw new Error("Use: node workshop/exercises/inspect-token.mjs CONTRACT_ADDRESS TOKEN_ID");
 }
 
-const rpcUrl = process.env.WORKSHOP_RPC_URL || "https://bsc-testnet-dataseed.bnbchain.org";
+const rpcUrl = process.env.WORKSHOP_RPC_URL || "https://sepolia.base.org";
 const provider = new JsonRpcProvider(rpcUrl);
 try {
-  if ((await provider.getNetwork()).chainId !== 97n) throw new Error("Select BNB Smart Chain Testnet (97).");
+  if ((await provider.getNetwork()).chainId !== 84532n) throw new Error("Select Base Sepolia (84532).");
   const artifact = JSON.parse(await readFile(new URL("../../artifacts/Gacha.json", import.meta.url), "utf8"));
   const contract = new Contract(getAddress(address), artifact.abi, provider);
   const card = await readCard(contract, BigInt(tokenId));
-  console.log({ chainId: 97, contract: contract.target, tokenId, ...card });
+  console.log({ chainId: 84532, contract: contract.target, tokenId, ...card });
 } finally {
   provider.destroy();
 }

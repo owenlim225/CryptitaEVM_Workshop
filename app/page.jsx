@@ -13,14 +13,14 @@ export default function Page() {
   return <>
     <header className="mast">
       <a className="brand" href="/" aria-label="Cryptita home"><svg aria-hidden="true" width="27" height="26" viewBox="0 0 27 26"><path fill="currentColor" d="M0 13 8 0h9L9 13l8 13H8zm12 0 8-13h7l-8 13 8 13h-7z"/></svg>Cryptita</a>
-      <span>BNB Smart Chain builder workshop</span>
+      <span>Base Sepolia builder workshop</span>
     </header>
     <main>
       <section className="press" aria-labelledby="title">
         <div className="controls">
           <h1 id="title">Rarity<br/><i>Roulette</i></h1>
-          <p>Create a deck and spin for a card. You can keep the win here or mint it into your MetaMask wallet.</p>
-          <button id="spin" type="button" hidden>Spin the wheel</button>
+          <p>Create a deck, then pay 0.0001 test ETH to spin and mint a card into your wallet.</p>
+          <button id="spin" type="button" hidden>Pay &amp; spin</button>
           <a id="edit" className="button-link" href="/deploy">Create a collection</a>
           <p id="deck-status" role="status" className="status">Loading deck…</p>
         </div>
@@ -45,11 +45,6 @@ export default function Page() {
           <div className="result-head"><h2 id="result-heading">Your winning card</h2><button type="button" className="minor" id="close-result" aria-label="Close result">Close</button></div>
           <div id="reflective-root"/>
           <div className="result-details">
-            <section id="win" className="win" aria-label="Winning card mint options" hidden>
-              <p id="win-note"/>
-              <button id="action" type="button">Mint this card with MetaMask</button>
-              <p id="status" className="status" role="status"/>
-            </section>
             <section id="receipt" className="receipt" aria-labelledby="receipt-title" hidden>
               <h2 id="receipt-title">Mint receipt</h2>
               <dl><dt>Contract</dt><dd id="receipt-address"/><dt>Token ID</dt><dd id="token"/></dl>
@@ -65,7 +60,7 @@ export default function Page() {
       </dialog>
       <div className="bench">
         <section><h2>Your deck</h2><p id="deck-summary">Finish editing a collection to unlock the wheel.</p>
-          <p className="mint-info">Minting uses tBNB for gas on BNB Smart Chain Testnet. The first mint creates your ERC-721 contract and issues your winning card in one transaction. Later wins use that contract.</p>
+          <p className="mint-info">Each spin sends 0.0001 test ETH to your own ERC-721 contract on Base Sepolia, plus gas. The first paid spin creates that contract and mints your card in one transaction. The browser selects the card before payment; this is a classroom demo, not a fair prize draw.</p>
         </section>
         <section><h2>Drop rates</h2>
           <table><caption className="sr">Probability of each rarity per spin</caption><thead><tr><th>Tier</th><th>Rarity</th><th>Chance</th></tr></thead>
@@ -73,7 +68,7 @@ export default function Page() {
           </table>
         </section>
       </div>
-      <footer>Your deck and current win are saved in this browser. You can spin and reveal cards without a wallet.</footer>
+      <footer>Your deck and mint receipts are saved in this browser. A MetaMask wallet with Base Sepolia test ETH is needed to spin.</footer>
     </main>
   </>;
 }

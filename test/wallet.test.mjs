@@ -15,7 +15,7 @@ test("MetaMask is selected when another extension also announces or owns window.
   assert.equal(getMetaMask(), wallets[1].provider);
 });
 
-test("a wallet missing BSC Testnet gets chain 97 with test currency and explorer", async () => {
+test("a wallet missing Base Sepolia gets chain 84532 with test currency and explorer", async () => {
   const calls = [];
   let added = false;
   let active = "0x38";
@@ -23,9 +23,9 @@ test("a wallet missing BSC Testnet gets chain 97 with test currency and explorer
     calls.push(method);
     if (method === "eth_chainId") return active;
     if (method === "wallet_addEthereumChain") {
-      assert.equal(params[0].chainId, "0x61");
-      assert.equal(params[0].nativeCurrency.symbol, "tBNB");
-      assert.deepEqual(params[0].blockExplorerUrls, ["https://testnet.bscscan.com"]);
+      assert.equal(params[0].chainId, "0x14a34");
+      assert.equal(params[0].nativeCurrency.symbol, "ETH");
+      assert.deepEqual(params[0].blockExplorerUrls, ["https://sepolia.basescan.org"]);
       added = true;
     } else if (!added) {
       throw Object.assign(Error("Unrecognized chain"), { code: 4902 });
@@ -33,6 +33,6 @@ test("a wallet missing BSC Testnet gets chain 97 with test currency and explorer
       active = params[0].chainId;
     }
   } };
-  await switchNetwork(wallet, 97);
+  await switchNetwork(wallet, 84532);
   assert.deepEqual(calls, ["eth_chainId", "wallet_switchEthereumChain", "wallet_addEthereumChain", "wallet_switchEthereumChain", "eth_chainId"]);
 });

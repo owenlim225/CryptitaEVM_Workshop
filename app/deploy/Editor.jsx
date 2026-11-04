@@ -31,7 +31,7 @@ export default function Editor() {
         </div>
       </fieldset>
       <p role="status" id="draft-status"/>
-      <section className="finish"><h2>Ready to play?</h2><p>Finish your collection to open the wheel. You can connect MetaMask after you win a card.</p><button id="finish" type="button">Finish collection &amp; spin</button></section>
+      <section className="finish"><h2>Ready to play?</h2><p>Finish your collection to open the wheel. Each spin uses MetaMask to pay 0.0001 Base Sepolia test ETH and mint your card.</p><button id="finish" type="button">Finish collection &amp; spin</button></section>
     </main>
   </>;
 }

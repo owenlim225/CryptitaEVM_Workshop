@@ -5,7 +5,7 @@ import hre from "hardhat";
 import artifact from "../artifacts/PaidGachaDemo.json" with { type: "json" };
 
 test("paid demo mint charges exactly 0.0001 native token and uses the fixed URI", async () => {
-  hre.network.config.chainId = 97;
+  hre.network.config.chainId = 84532;
   const provider = new BrowserProvider(hre.network.provider, undefined, {cacheTimeout:-1});
   const owner = await provider.getSigner(0);
   const other = await provider.getSigner(1);
