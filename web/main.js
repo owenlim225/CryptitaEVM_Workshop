@@ -21,9 +21,10 @@ function restoreWin() {
   return current ? JSON.parse(current) : undefined;
 }
 function render() {
-  $("spin").hidden = !deck.length;
+  $("spin-action").hidden = !deck.length;
+  $("spin-price").hidden = !!win?.pending;
   $("spin").disabled = busy || !connectedAccount;
-  $("spin").textContent = win?.pending ? "Check spin status" : win && !win.receipt ? "Retry paid spin" : win ? "Spin again · 0.0001 ETH" : "Pay & spin · 0.0001 ETH";
+  $("spin").textContent = win?.pending ? "Check spin status" : win && !win.receipt ? "Retry paid spin" : win ? "Spin again" : "Pay & spin";
   $("connect-wallet").hidden = !!connectedAccount;
   $("connect-wallet").disabled = busy;
   $("wallet-address").hidden = !connectedAccount;

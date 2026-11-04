@@ -20,6 +20,8 @@ h1, h2, figcaption { font-family:Georgia,Georgia Pro,serif; font-weight:normal; 
 h1 { font-size:clamp(4.2rem,8vw,6rem); line-height:.89; letter-spacing:-.04em; }
 h1 i { color:var(--accent); }
 .controls > p:first-of-type { font-size:1.12rem; max-width:34ch; margin:1.35rem 0; }
+.spin-action { display:inline-flex; flex-direction:column; align-items:center; gap:.25rem; vertical-align:middle; }
+#spin-price { color:var(--dim); font-size:.85rem; }
 button, input, select { font:inherit; }
 button { cursor:pointer; min-height:44px; padding:.65rem 1.1rem; background:var(--accent); color:white; border:1px solid var(--accent); border-radius:4px; font-weight:650; }
 button:hover:enabled { background:#5e0e91; }
