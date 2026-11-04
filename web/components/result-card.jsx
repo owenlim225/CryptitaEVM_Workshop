@@ -12,7 +12,7 @@ export function showResultCard(card) {
       theme="dark"
       width="100%"
       height="100%"
-      tint="#d9e8bf"
+      tint="#c68aed"
       metalness={0.72}
       roughness={0.42}
       blurStrength={4}

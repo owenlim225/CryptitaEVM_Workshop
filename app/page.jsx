@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import Image from "next/image";
 
 const tiers = [
   ["N", "Normal", "55%"], ["R", "Rare", "28%"], ["SR", "Super Rare", "12%"],
@@ -12,7 +13,7 @@ export default function Page() {
 
   return <>
     <header className="mast">
-      <a className="brand" href="/" aria-label="Cryptita home"><svg aria-hidden="true" width="27" height="26" viewBox="0 0 27 26"><path fill="currentColor" d="M0 13 8 0h9L9 13l8 13H8zm12 0 8-13h7l-8 13 8 13h-7z"/></svg>Cryptita</a>
+      <a className="brand" href="/"><Image src="/cryptita-logo.png" alt="Cryptita Plays" width={280} height={83}/></a>
       <div className="mast-right"><span>Base Sepolia builder workshop</span><div className="wallet-controls"><button id="connect-wallet" type="button" className="minor">Connect wallet</button><span id="wallet-address" hidden/><button id="disconnect-wallet" type="button" className="minor" hidden>Disconnect wallet</button></div></div>
     </header>
     <main>
@@ -28,12 +29,12 @@ export default function Page() {
           <div className="plate-header"><span>CRYPTITA / GACHA</span><span id="deck-count">CARD DRAW</span></div>
           <div className="wheel-housing">
             <svg viewBox="0 0 320 320" role="img" aria-label="Rarity wheel with the chances for your saved deck.">
-              <circle cx="160" cy="160" r="137" fill="#f7f3d9" stroke="#17302f" strokeWidth="2"/>
-              <circle cx="160" cy="160" r="131" fill="none" stroke="#506457" strokeWidth="4" strokeDasharray="1 7.23"/>
+              <circle cx="160" cy="160" r="137" fill="#fcf9ff" stroke="#2d153f" strokeWidth="2"/>
+              <circle cx="160" cy="160" r="131" fill="none" stroke="#9570b4" strokeWidth="4" strokeDasharray="1 7.23"/>
               <g id="wheel-disc"/>
-              <circle cx="160" cy="160" r="23" fill="#f7f3d9" stroke="#17302f" strokeWidth="2"/>
-              <path d="m160 146 11 14-11 14-11-14z" fill="#17302f"/>
-              <path d="M149 14h22l-11 30z" fill="#17302f" stroke="#f7f3d9" strokeWidth="2"/>
+              <circle cx="160" cy="160" r="23" fill="#fcf9ff" stroke="#2d153f" strokeWidth="2"/>
+              <path d="m160 146 11 14-11 14-11-14z" fill="#2d153f"/>
+              <path d="M149 14h22l-11 30z" fill="#2d153f" stroke="#fcf9ff" strokeWidth="2"/>
             </svg>
           </div>
           <figcaption role="status" aria-live="polite" aria-atomic="true"><span id="plate-title">Ready to spin</span><span id="plate-code">—</span></figcaption>

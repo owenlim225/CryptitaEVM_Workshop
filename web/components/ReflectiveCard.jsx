@@ -6,11 +6,11 @@ import './ReflectiveCard.css';
 
 const THEMES = {
   dark: {
-    '--rc-base': '#1d1c22',
+    '--rc-base': '#24122f',
     '--rc-shadow': '0 22px 44px -20px rgba(0, 0, 0, 0.8), 0 6px 16px -8px rgba(0, 0, 0, 0.5)',
-    '--rc-ink': '#f4f4f5',
-    '--rc-muted': 'rgba(244, 244, 245, 0.6)',
-    '--rc-tile': 'linear-gradient(180deg, #3a3644 0%, #27242f 100%)',
+    '--rc-ink': '#fbf8ff',
+    '--rc-muted': 'rgba(251, 248, 255, 0.7)',
+    '--rc-tile': 'linear-gradient(180deg, #503160 0%, #321b40 100%)',
     '--rc-tile-edge': 'rgba(255, 255, 255, 0.07)',
     '--rc-tile-highlight': 'rgba(255, 255, 255, 0.12)',
     '--rc-tile-shadow': '0 4px 10px -4px rgba(0, 0, 0, 0.7)',
@@ -18,11 +18,11 @@ const THEMES = {
     '--rc-rim-highlight': 'rgba(255, 255, 255, 0.1)'
   },
   light: {
-    '--rc-base': '#e7e7ea',
+    '--rc-base': '#f0e6f8',
     '--rc-shadow': '0 22px 44px -22px rgba(24, 24, 27, 0.3), 0 6px 16px -10px rgba(24, 24, 27, 0.16)',
-    '--rc-ink': '#18181b',
-    '--rc-muted': 'rgba(24, 24, 27, 0.6)',
-    '--rc-tile': 'linear-gradient(180deg, #ffffff 0%, #f6f6f8 100%)',
+    '--rc-ink': '#2d153f',
+    '--rc-muted': 'rgba(45, 21, 63, 0.65)',
+    '--rc-tile': 'linear-gradient(180deg, #ffffff 0%, #f6effc 100%)',
     '--rc-tile-edge': 'rgba(24, 24, 27, 0.08)',
     '--rc-tile-highlight': 'rgba(255, 255, 255, 1)',
     '--rc-tile-shadow': '0 4px 10px -5px rgba(24, 24, 27, 0.25)',

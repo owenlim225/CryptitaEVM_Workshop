@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import Image from "next/image";
 
 export default function Editor() {
   useEffect(() => {
@@ -10,7 +11,7 @@ export default function Editor() {
   }, []);
 
   return <>
-    <header className="mast"><a className="brand" href="/">← Rarity Roulette</a><span>Collection studio</span></header>
+    <header className="mast"><a className="brand" href="/"><Image src="/cryptita-logo.png" alt="Cryptita Plays" width={280} height={83}/></a><span>Collection studio</span></header>
     <main className="studio">
       <h1>Create your collection</h1>
       <p>Give each card a title, a picture, details and a rarity. Your draft stays in this browser. Finish with one or more cards to play.</p>
