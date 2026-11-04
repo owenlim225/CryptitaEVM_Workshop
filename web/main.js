@@ -94,7 +94,7 @@ async function verifyMint(provider, pending) {
   if (!token) return false;
   const [owner, uri] = await Promise.all([nft.ownerOf(token), nft.tokenURI(token)]);
   if (uri !== win.metadataUri) throw Error("The token URI differs from the uploaded winning card. Check the mint receipt.");
-  const response = await fetch("https://ipfs.io/ipfs/" + uri.slice(7));
+  const response = await fetch(uri);
   if (!response.ok) throw Error("The uploaded metadata is not available yet. Check mint status again shortly.");
   const json = await response.text();
   if (json !== cardMetadata(win.card)) throw Error("The token metadata differs from the winning card. Check the mint receipt.");
@@ -113,7 +113,7 @@ async function prepare(provider, account) {
     const nft = new Contract(known.address, artifact.abi, provider);
     const previousToken = await nft.mintedToken(account, known.winId);
     if (!previousToken) throw Error("Could not verify the saved minter for this account.");
-    if (!(await nft.tokenURI(previousToken)).startsWith("ipfs://")) {
+    if (!(await nft.tokenURI(previousToken)).startsWith("https://")) {
       return {account, address:getCreateAddress({from:account, nonce}), nonce, create:true};
     }
     return {account, address:known.address, nonce, create:false};

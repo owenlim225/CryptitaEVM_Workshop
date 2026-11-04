@@ -5,7 +5,7 @@ Follow the numbered instructions in the [README](../README.md). This page is you
 | Time | Build step | Show at the checkpoint |
 | --- | --- | --- |
 | 00:00–00:20 | README §§1–2: install, wallet, Pinata key, inspect finished target, generate starter | Separate project folder, dedicated MetaMask test account, chain 97 |
-| 00:20–00:50 | §3: implement the ERC-721 mint and token URI | Contract tests pass; identify ABI and bytecode |
+| 00:20–00:50 | §3: implement the ERC-721 mint with URI storage | Contract tests pass; identify ABI and bytecode |
 | 00:50–01:20 | §4: encode card JSON and weighted draw | Card/roulette tests pass; explain SSR:UR = 4:1 |
 | 01:20–01:45 | §5: network switching and wallet connection | Twelve automated tests pass |
 | 01:45–01:55 | Break | Keep your project and browser profile open |
@@ -16,13 +16,13 @@ Follow the numbered instructions in the [README](../README.md). This page is you
 
 ## What you are building
 
-The starter includes the Next.js pages, editor, wheel display, styles, tests, and transaction recovery flow. You complete seven TODOs: the Solidity mint and URI, JSON metadata, represented-tier weights, card draw, MetaMask network switch, and wallet connection. You then customize the app and use your wallet for the public testnet step.
+The starter includes the Next.js pages, editor, wheel display, styles, tests, and transaction recovery flow. You complete six TODOs: the Solidity mint with <code>_setTokenURI</code>, JSON metadata, represented-tier weights, card draw, MetaMask network switch, and wallet connection. You then customize the app and use your wallet for the public testnet step.
 
 The path through the system is:
 
 ~~~text
 Local card editor → saved deck → weighted draw → winner + win ID
-Pinata upload → public IPFS metadata URI
+Pinata upload → public HTTPS metadata URL
 First wallet approval → contract creation + token #1
 Later wallet approval → mint on saved contract → next token
 Public read → ownerOf + tokenURI → IPFS JSON → compare with original winner

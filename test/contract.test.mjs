@@ -6,7 +6,7 @@ import artifact from "../artifacts/Gacha.json" with { type: "json" };
 
 let game, factory, player, other;
 const firstWin = id("first win");
-const firstUri = "ipfs://bafybeigdyrzt5n5vy7z4hxgqstnqzz6p4d2t2qxj5qj3g5mbr4qle3x3yy";
+const firstUri = "https://ivory-additional-snail-831.mypinata.cloud/ipfs/bafkreibc7d3vnc24vsg3inh6s6qh6d2xlfhd62fexxt3n5pxtuoshsk7be";
 
 before(async () => {
   hre.network.config.chainId = 97;
@@ -30,7 +30,7 @@ test("recovering a previous win returns its original token, even after a transfe
   const from = await player.getAddress();
   const to = await other.getAddress();
   assert.equal(await game.mintedToken(from, firstWin), 1n);
-  await expectRevert(game.mint.staticCall(firstWin, "ipfs://bafyedited"), "AlreadyMinted", [1]);
+  await expectRevert(game.mint.staticCall(firstWin, "https://example.com/edited"), "AlreadyMinted", [1]);
   await (await game.transferFrom(from, to, 1n)).wait();
   assert.equal(await game.ownerOf(1n), to);
   assert.equal(await game.mintedToken(from, firstWin), 1n);
@@ -40,7 +40,7 @@ test("recovering a previous win returns its original token, even after a transfe
 
 test("the same win identifier can be used independently by another account", async () => {
   const recipient = await other.getAddress();
-  const uri = "ipfs://bafybeih2ejr7xgpgbnpk7j2tlpshrz5t6w5v32xvr6jeyg2p6x6cy6s6ia";
+  const uri = "https://ivory-additional-snail-831.mypinata.cloud/ipfs/bafybeih2ejr7xgpgbnpk7j2tlpshrz5t6w5v32xvr6jeyg2p6x6cy6s6ia";
   assert.equal(await game.mintedToken(recipient, firstWin), 0n);
   await (await game.connect(other).mint(firstWin, uri)).wait();
   const token = await game.mintedToken(recipient, firstWin);
@@ -54,7 +54,7 @@ test("deployment and later mints reject unusable IDs and metadata URIs", async (
   const win = id("input validation");
   for (const submit of [(key, uri) => factory.deploy(key, uri), (key, uri) => game.mint(key, uri)]) {
     await expectRevert(submit(ZeroHash, firstUri), "InvalidWinId", []);
-    for (const uri of ["", "https://example.com/card.json", "ipfs://", "ipfs://" + "a".repeat(122)]) {
+    for (const uri of ["", "http://example.com/card.json", "ipfs://bafytest", "https://", "https://" + "a".repeat(249)]) {
       await expectRevert(submit(win, uri), "InvalidMetadataURI", []);
     }
   }

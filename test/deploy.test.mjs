@@ -9,8 +9,8 @@ test("the first wallet confirmation deploys and mints, the next mints into that 
   const provider = new BrowserProvider(hre.network.provider);
   const player = await provider.getSigner();
   const recipient = await player.getAddress();
-  const first = "ipfs://bafybeigdyrzt5n5vy7z4hxgqstnqzz6p4d2t2qxj5qj3g5mbr4qle3x3yy";
-  const next = "ipfs://bafybeih2ejr7xgpgbnpk7j2tlpshrz5t6w5v32xvr6jeyg2p6x6cy6s6ia";
+  const first = "https://ivory-additional-snail-831.mypinata.cloud/ipfs/bafkreibc7d3vnc24vsg3inh6s6qh6d2xlfhd62fexxt3n5pxtuoshsk7be";
+  const next = "https://ivory-additional-snail-831.mypinata.cloud/ipfs/bafybeih2ejr7xgpgbnpk7j2tlpshrz5t6w5v32xvr6jeyg2p6x6cy6s6ia";
   const collection = await new ContractFactory(artifact.abi, artifact.bytecode, player).deploy(id("win 1"), first);
   const address = await collection.getAddress();
   const creation = await collection.deploymentTransaction().wait();
@@ -23,11 +23,14 @@ test("the first wallet confirmation deploys and mints, the next mints into that 
   for (const [receipt, win, token, uri] of [
     [creation, "win 1", 1n, first], [nextMint, "win 2", 2n, next]
   ]) {
-    assert.equal(receipt.logs.length, 1);
+    assert.equal(receipt.logs.length, 2);
     assert.equal(receipt.logs[0].address, address);
     const transfer = collection.interface.parseLog(receipt.logs[0]);
     assert.equal(transfer.name, "Transfer");
     assert.deepEqual([...transfer.args], [ZeroAddress, recipient, token]);
+    const update = collection.interface.parseLog(receipt.logs[1]);
+    assert.equal(update.name, "MetadataUpdate");
+    assert.equal(update.args[0], token);
     assert.equal(await collection.mintedToken(recipient, id(win)), token);
     assert.equal(await collection.ownerOf(token), recipient);
     assert.equal(await collection.tokenURI(token), uri);

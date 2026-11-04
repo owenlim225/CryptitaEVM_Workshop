@@ -1,4 +1,4 @@
-import { cp, mkdir, readFile, stat, writeFile } from "node:fs/promises";
+import { cp, mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { resolve, join } from "node:path";
 
 const destination = process.argv[2];
@@ -30,6 +30,7 @@ await cp(join(root, "workshop", "exercises", "inspect-token.mjs"),
 for (const guide of ["PARTICIPANT.md", "FACILITATOR.md"]) {
   await cp(join(root, "workshop", guide), join(target, "workshop", guide));
 }
+await rm(join(target, "test", "paid-gacha-demo.test.mjs"));
 
 async function replace(file, from, to, placeholder) {
   const path = join(target, file);
@@ -42,37 +43,30 @@ async function replace(file, from, to, placeholder) {
   await writeFile(path, source.slice(0, start) + placeholder + source.slice(end));
 }
 
-await replace("contracts/Gacha.sol", "    function _mintCard(", "    function tokenURI(", `    function _mintCard(bytes32 winId, string memory metadataUri) private returns (uint256 tokenId) {
+await replace("contracts/Gacha.sol", "    function _mintCard(", "\n}", `    function _mintCard(bytes32 winId, string memory metadataUri) private returns (uint256 tokenId) {
         // TODO 1: validate, remember and mint this win.
         revert("Complete _mintCard in the README");
-    }
-
-`);
-await replace("contracts/Gacha.sol", "    function tokenURI(", "\n}", `    function tokenURI(uint256 tokenId) public view override returns (string memory) {
-        // TODO 2: return this token's IPFS metadata URI.
-        _requireOwned(tokenId);
-        return "";
     }`);
 await replace("web/cards.js", "export function cardMetadata(", "export function validateCard(", `export function cardMetadata(card) {
-  // TODO 3: encode name, description, image and Rarity attribute as JSON.
+  // TODO 2: encode name, description, image and Rarity attribute as JSON.
   throw Error("Complete cardMetadata in the README");
 }
 
 `);
 await replace("web/cards.js", "export function availableWeights(", "\n}", `export function availableWeights(cards) {
-  // TODO 4: use a tier's weight only when the deck contains that tier.
+  // TODO 3: use a tier's weight only when the deck contains that tier.
   throw Error("Complete availableWeights in the README");
 `);
 await replace("web/cards.js", "export function drawCard(", "\n}", `export function drawCard(randomHex, cards) {
-  // TODO 5: draw a represented rarity, then one card from that rarity.
+  // TODO 4: draw a represented rarity, then one card from that rarity.
   throw Error("Complete drawCard in the README");
 `);
 await replace("web/wallet.js", "export async function switchNetwork(", "\n}", `export async function switchNetwork(wallet, target) {
-  // TODO 6: switch MetaMask to chain 97, adding the network if missing.
+  // TODO 5: switch MetaMask to chain 97, adding the network if missing.
   throw Error("Complete switchNetwork in the README");
 `);
 await replace("web/main.js", "async function connect() {", "async function verifyMint(", `async function connect() {
-  // TODO 7: request MetaMask accounts, select chain 97, and return wallet + account.
+  // TODO 6: request MetaMask accounts, select chain 97, and return wallet + account.
   throw Error("Complete connect in the README");
 }
 `);

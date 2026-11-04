@@ -8,7 +8,7 @@ test("the constructor refuses deployment on BSC mainnet (simulated chain 56)", a
   hre.network.config.chainId = 56;
   const provider = new BrowserProvider(hre.network.provider);
   const factory = new ContractFactory(artifact.abi, artifact.bytecode, await provider.getSigner());
-  await assert.rejects(factory.deploy("0x" + "01".repeat(32), "ipfs://bafytest"), (error) => {
+  await assert.rejects(factory.deploy("0x" + "01".repeat(32), "https://example.com/card.json"), (error) => {
     assert.equal(error.code, "CALL_EXCEPTION");
     assert.equal(error.data, factory.interface.encodeErrorResult("UnsupportedChain", [56]));
     return true;

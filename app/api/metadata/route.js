@@ -1,5 +1,9 @@
 export async function POST(request) {
   if (!process.env.PINATA_JWT) return Response.json({error:"Set PINATA_JWT in .env.local before minting."}, {status:503});
+  const gateway = process.env.PINATA_GATEWAY_URL;
+  if (!/^https:\/\/[a-z0-9-]+\.mypinata\.cloud\/?$/.test(gateway ?? "")) {
+    return Response.json({error:"Set PINATA_GATEWAY_URL to your Pinata HTTPS gateway in .env.local."}, {status:503});
+  }
   if (Number(request.headers.get("content-length")) > 8192) return Response.json({error:"Metadata exceeds 8 KiB."}, {status:413});
 
   const json = await request.text();
@@ -22,7 +26,7 @@ export async function POST(request) {
     if (!response.ok) throw Error("Pinata upload failed");
     const {data} = await response.json();
     if (!/^b[a-z2-7]{20,}$/.test(data?.cid ?? "")) throw Error("Pinata returned an invalid CID");
-    return Response.json({uri:`ipfs://${data.cid}`});
+    return Response.json({uri:`${gateway.replace(/\/$/, "")}/ipfs/${data.cid}`});
   } catch {
     return Response.json({error:"Could not upload metadata to Pinata. Try again."}, {status:502});
   }

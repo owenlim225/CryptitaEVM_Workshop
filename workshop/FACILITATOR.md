@@ -1,13 +1,13 @@
 # Facilitator guide
 
-The [README](../README.md) is the exact student build procedure. The [participant guide](PARTICIPANT.md) gives a three-hour schedule. Students begin from a generated starter, complete seven TODOs, personalize the app, then mint their own winner on **BNB Smart Chain Testnet (97)**.
+The [README](../README.md) is the exact student build procedure. The [participant guide](PARTICIPANT.md) gives a three-hour schedule. Students begin from a generated starter, complete six TODOs, personalize the app, then mint their own winner on **BNB Smart Chain Testnet (97)**.
 
 ## Before class
 
 1. In a fresh reference checkout run <code>npm ci</code>, <code>npm test</code>, <code>npm run build</code> and <code>npm run dev</code>. Check <code>/deploy</code>, a two-tier deck, a spin and the winner dialog.
-2. Generate a starter with <code>node workshop/create-starter.mjs ../rehearsal-gacha</code>. Check that it has seven TODOs, compiles, and that the contract, card and wallet tests initially fail. Complete the README snippets in that copy and verify all twelve tests pass. The reference repository remains the answer key.
+2. Generate a starter with <code>node workshop/create-starter.mjs ../rehearsal-gacha</code>. Check that it has six TODOs, compiles, and that the contract, card and wallet tests initially fail. Complete the README snippets in that copy and verify all twelve student-project tests pass. The reference repository remains the answer key.
 3. Arrange test tBNB for a contract creation and a later mint per student or pair. Use a dedicated MetaMask test account. Review the [BNB Chain faucet guide](https://docs.bnbchain.org/docs/bsc-faucet/) and test a chain-97 RPC endpoint before class.
-4. Rehearse a public first mint and later mint in the same browser and account. Keep their BscScan links. Verify token ownership and the JSON URI with the inspector. Do not substitute an in-memory test receipt for this checkpoint.
+4. Rehearse a public first mint and later mint in the same browser and account. Keep their BscScan links. Verify token ownership and the Pinata metadata URL with the inspector. Do not substitute an in-memory test receipt for this checkpoint.
 5. Remind participants that no private key or recovery phrase belongs in a file, form, chat or screenshot. MetaMask signs in the browser.
 
 ## Teaching checkpoints
@@ -24,7 +24,7 @@ The [README](../README.md) is the exact student build procedure. The [participan
 
 - **Starter was generated inside the reference repository or destination exists:** choose a new sibling folder, such as <code>../student-gacha-2</code>. The generator deliberately refuses overwrite.
 - **Contract compile fails:** compare the two replaced Solidity functions with README §3. Compile generates <code>artifacts/Gacha.json</code>.
-- **Tests fail after a TODO:** check the exact named function and its return type. The initial red tests are expected; the completed project should pass twelve tests.
+- **Tests fail after a TODO:** check the exact named function and its return type. The initial red tests are expected; the completed project should pass twelve student-project tests.
 - **Wallet prompt missing or wrong extension responds:** enable and unlock MetaMask in the current browser profile, reload, and check the network. The app requests account access only when minting.
 - **Insufficient funds or stalled mint:** verify the selected account and tBNB balance, check MetaMask activity and BscScan, then use **Check mint status**. A first mint includes contract creation.
 - **NFT not visible:** use the current account on chain 97 and manually import the contract address plus token ID. Check <code>ownerOf</code> independently.
